@@ -1,10 +1,15 @@
 use git2::{
     Repository,
     Oid, 
+    DiffDelta,
+    DiffHunk,
+    DiffLine,
+    DiffFormat
 };
 
 use std::error::Error;
 use std::process;
+use std::str;
 
 fn main() {
    if let Err(e) = run() {
@@ -27,6 +32,22 @@ fn run() -> Result<(), Box<dyn Error>> {
     let new_tree = repo.find_tree(new_commit.tree_id())?;
 
     let diff = repo.diff_tree_to_tree(Some(&old_tree), Some(&new_tree), None)?;
+    diff.print(DiffFormat::Patch, diff_print);
 
     Ok(())
+}
+
+fn diff_print(delta: DiffDelta, hunk: Option<DiffHunk>, line: DiffLine) -> bool {
+    let content = match str::from_utf8(line.content()) {
+        Err(e) => return false,
+        Ok(s) => s, 
+    };
+
+    match line.origin() {
+        '+' | '-' | ' ' => print!("{} {}", line.origin(), content),
+        'F' => print!("\n{}", content),
+        'H' => print!("{}", content),
+        _ => (),
+    }
+    true
 }
