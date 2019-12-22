@@ -43,10 +43,9 @@ fn run() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn filter_commits<'repo>(repo: &'repo Repository, filter_email: &str) 
+fn filter_commits<'repo>(repo: &'repo Repository, email: &str) 
     -> Result<Vec<Commit<'repo>>, Box<dyn Error>> {
     let mut visited = HashSet::new();
-    let mut commits = Vec::new();
     let mut walk = repo.revwalk()?;
 
     for branch in repo.branches(Some(BranchType::Local))? {
@@ -58,26 +57,28 @@ fn filter_commits<'repo>(repo: &'repo Repository, filter_email: &str)
         walk.push(oid)?;
     }
 
-    for oid in walk {
-        let oid = oid?;
-        if visited.contains(&oid) {
-            continue
-        }
+    Ok(walk
+       .filter(|oid| {
+            let oid = match oid {
+                Ok(id) => id,
+                Err(_) => return false, 
+            };
 
-        let commit = repo.find_commit(oid)?;
-        let email = match commit.author().email() {
-            Some(e) => String::from(e), 
-            None => continue,
-        };
-
-        if email == filter_email {
-            commits.push(commit);
-        }
-
-        visited.insert(oid);
-    }
-
-    Ok(commits)
+            if visited.contains(oid) {
+                return false;
+            }
+            visited.insert(*oid);
+            true
+       })
+       .map(|oid| return repo.find_commit(oid.unwrap()).expect("Couldn't find commit from oid"))
+       .filter(|commit| {
+           match commit.author().email() {
+               Some(e) => e == email,
+               None => false,
+           }
+       })
+       .collect()
+   )
 }
 
 fn get_diff(repo: &Repository, old: Oid, new: Oid) -> Result<Diff, Box<dyn Error>> {
