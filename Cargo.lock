@@ -49,7 +49,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "git_play"
+name = "git_journal"
 version = "0.1.0"
 dependencies = [
  "git2 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
