@@ -38,9 +38,9 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     let counts = LineCounts::new();
     println!();
 
-    let mut info = Vec::new();
-    get_diff_info(&mut info, diff)?;
-    println!("{:?}", info);
+    let mut journal_diff = JournalDiff::new();
+    journal_diff.construct(diff)?;
+    println!("{}", serde_json::to_string(&journal_diff).unwrap());
 
     Ok(())
 }

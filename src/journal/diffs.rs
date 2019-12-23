@@ -4,6 +4,8 @@ use std::{
     cell::RefCell,
 };
 
+use serde::{Deserialize, Serialize};
+
 use git2::{
     Diff,
 };
@@ -50,7 +52,7 @@ pub fn get_diff_info(info: &mut Vec<DiffInfo>, diff: Diff) -> Result<(), Box<dyn
     Ok(())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct JournalDiff {
     pub counts: LineCounts,
     pub files: Vec<FileChanges>,
@@ -80,7 +82,7 @@ impl JournalDiff {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct FileChanges {
     pub counts: LineCounts,
     pub header: String,
@@ -117,7 +119,7 @@ impl FileChanges {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Hunk {
     pub counts: LineCounts,
     pub header: String,
@@ -152,7 +154,7 @@ impl Hunk {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LineCounts {
     pub added: usize,
     pub deleted: usize,
