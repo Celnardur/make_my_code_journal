@@ -14,10 +14,12 @@ use std::{
     error::Error,
     str,
     collections::HashSet,
-    collections::HashMap,
     //io::prelude::*,
     //fs::File,
 };
+
+mod journal;
+use journal::diffs::*;
 
 pub fn run() -> Result<(), Box<dyn Error>> {
     let path = "git_test";
@@ -27,11 +29,18 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     let commits = filter_commits(&repo, &email)?;
     println!("{:?}", commits);
 
-    let old_oid = Oid::from_str("53b960426e5126ff65e71a62b743c9d17fcf1fbf")?;
-    let new_oid = Oid::from_str("85f423d4a90650d2cd27b1c0d49fbd2ba92ab9a1")?;
+    let old_oid = Oid::from_str("85f423d4a90650d2cd27b1c0d49fbd2ba92ab9a1")?;
+    let new_oid = Oid::from_str("9c6fae26ae28db468d5111a608d29a672317fcfc")?;
 
     let diff = get_diff(&repo, old_oid, new_oid)?;
     diff.print(DiffFormat::Patch, diff_print)?;
+
+    let counts = LineCounts::new();
+    println!();
+
+    let mut info = Vec::new();
+    get_diff_info(&mut info, diff)?;
+    println!("{:?}", info);
 
     Ok(())
 }
@@ -84,7 +93,7 @@ fn get_diff(repo: &Repository, old: Oid, new: Oid) -> Result<Diff, Box<dyn Error
     Ok(repo.diff_tree_to_tree(Some(&old_tree), Some(&new_tree), None)?)
 }
 
-fn diff_print(delta: DiffDelta, hunk: Option<DiffHunk>, line: DiffLine) -> bool {
+fn diff_print(delta: DiffDelta, _hunk: Option<DiffHunk>, line: DiffLine) -> bool {
     let content = match str::from_utf8(line.content()) {
         Err(_) => return false,
         Ok(s) => s, 
@@ -93,8 +102,8 @@ fn diff_print(delta: DiffDelta, hunk: Option<DiffHunk>, line: DiffLine) -> bool 
     match line.origin() {
         '+' | '-' | ' ' => print!("{} {}", line.origin(), content),
         'F' => print!("\n{}", content),
-        'H' => print!("{}", content),
-        _ => (),
+        'H' => print!("  {}", content),
+        _ => print!("{} {}", line.origin(), content),
     }
     true
 }
