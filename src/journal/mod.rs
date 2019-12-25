@@ -1,4 +1,5 @@
 pub mod diffs;
+pub mod config;
 
 use std::error;
 use std::fmt;
