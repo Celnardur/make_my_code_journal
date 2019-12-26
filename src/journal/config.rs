@@ -7,6 +7,7 @@ pub struct Config {
     pub indent_string: String,
     pub day_change_time: i32,
     pub repos: Vec<String>, 
+    pub emails: Vec<String>,
 }
 
 impl Config {

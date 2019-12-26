@@ -2,7 +2,10 @@
     "indent_string": "    ", 
     "day_change_time": 600,
     "repos": [
-        "git_play",
-        "/home/celnardur/School/compilers/project"
+        "git_test"
+    ],
+    "emails": [
+        "adorranc@nd.edu",
+        "celnardur@protonmail.com"
     ]
 }

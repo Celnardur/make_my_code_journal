@@ -11,7 +11,7 @@ pub struct Error {
 }
 
 impl Error {
-    fn new(message: &str) -> Error {
+    pub fn new(message: &str) -> Error {
         Error { message: String::from(message) }
     }
 }

@@ -8,17 +8,19 @@ use serde::{Deserialize, Serialize};
 
 use git2::{
     Diff,
+    Repository,
+    Commit,
 };
 
 #[derive(Debug, Clone)]
-pub struct DiffInfo {
+struct DiffInfo {
     origin: char,
     content: String,
     old_file: String,
     new_file: String,
 }
 
-pub fn get_diff_info(info: &mut Vec<DiffInfo>, diff: Diff) -> Result<(), Box<dyn Error>> {
+fn get_diff_info(info: &mut Vec<DiffInfo>, diff: Diff) -> Result<(), Box<dyn Error>> {
     let info_cell = RefCell::new(info);
 
     diff.print(git2::DiffFormat::Patch, |delta, _hunk, line| {
@@ -54,8 +56,8 @@ pub fn get_diff_info(info: &mut Vec<DiffInfo>, diff: Diff) -> Result<(), Box<dyn
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JournalDiff {
-    pub counts: LineCounts,
-    pub files: Vec<FileChanges>,
+    counts: LineCounts,
+    files: Vec<FileChanges>,
 }
 
 
@@ -65,6 +67,25 @@ impl JournalDiff {
             counts: LineCounts::new(),
             files: Vec::new(),
         }
+    }
+
+    pub fn from_commit(repo: &Repository, commit: &Commit) -> Result<JournalDiff, Box<dyn Error>> {
+        if commit.parent_count() > 1 {
+            //TODO: Implement diff for a merge commit
+            return Err(Box::new(super::Error::new("Cannot git a diff for a merge commit yet")));
+        }
+
+        let new_tree = repo.find_tree(commit.tree_id())?;
+
+        let old_commit = repo.find_commit(commit.parent_id(0)?)?;
+        let old_tree = repo.find_tree(old_commit.tree_id())?;
+        JournalDiff::from_diff(repo.diff_tree_to_tree(Some(&old_tree), Some(&new_tree), None)?)
+    }
+
+    pub fn from_diff(diff: Diff) -> Result<JournalDiff, Box<dyn Error>> {
+        let mut journal = JournalDiff::new();
+        journal.construct(diff)?;
+        Ok(journal)
     }
 
     pub fn construct(&mut self, diff: Diff) -> Result<(), Box<dyn Error>> {
@@ -84,11 +105,11 @@ impl JournalDiff {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct FileChanges {
-    pub counts: LineCounts,
-    pub header: String,
-    pub old_path: String,
-    pub new_path: String,
-    pub hunks: Vec<Hunk>,
+    counts: LineCounts,
+    header: String,
+    old_path: String,
+    new_path: String,
+    hunks: Vec<Hunk>,
 }
 
 impl FileChanges {
@@ -121,9 +142,9 @@ impl FileChanges {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Hunk {
-    pub counts: LineCounts,
-    pub header: String,
-    pub content: String,
+    counts: LineCounts,
+    header: String,
+    content: String,
 }
 
 impl Hunk {
@@ -156,9 +177,9 @@ impl Hunk {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LineCounts {
-    pub added: usize,
-    pub deleted: usize,
-    pub modified: usize,
+    added: usize,
+    deleted: usize,
+    modified: usize,
 }
 
 impl LineCounts {

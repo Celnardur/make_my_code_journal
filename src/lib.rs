@@ -8,6 +8,7 @@ use git2::{
     DiffFormat,
     Commit,
     BranchType,
+    Revwalk,
 };
 
 use std::{
@@ -18,17 +19,24 @@ use std::{
     //fs::File,
 };
 
-mod journal;
+pub mod journal;
 use journal::diffs::*;
+use journal::config::Config;
 
-pub fn run() -> Result<(), Box<dyn Error>> {
-    let path = "git_test";
-    let repo = Repository::open(path)?;
-    let email = String::from("celnardur@protonmail.com");
+pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    for repo in config.repos {
+        let repo = Repository::open(repo)?;
+        let walk = get_repo_revwalk(&repo)?;
+        let commits = filter_by_email(&repo, walk, &config.emails)?;
+        println!("{:?}", commits.len());
+        for commit in commits {
+            if let Ok(journal_diff) = JournalDiff::from_commit(&repo, &commit) {
+                println!("{:?}\n", journal_diff);
+            }
+        }
+    }
 
-    let commits = filter_commits(&repo, &email)?;
-    println!("{:?}", commits);
-
+    /*
     let old_oid = Oid::from_str("85f423d4a90650d2cd27b1c0d49fbd2ba92ab9a1")?;
     let new_oid = Oid::from_str("9c6fae26ae28db468d5111a608d29a672317fcfc")?;
 
@@ -41,13 +49,12 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     let mut journal_diff = JournalDiff::new();
     journal_diff.construct(diff)?;
     println!("{}", serde_json::to_string(&journal_diff).unwrap());
+    */
 
     Ok(())
 }
 
-fn filter_commits<'repo>(repo: &'repo Repository, email: &str) 
-    -> Result<Vec<Commit<'repo>>, Box<dyn Error>> {
-    let mut visited = HashSet::new();
+fn get_repo_revwalk<'repo>(repo: &'repo Repository) -> Result<Revwalk<'repo>, Box<dyn Error>> {
     let mut walk = repo.revwalk()?;
 
     for branch in repo.branches(Some(BranchType::Local))? {
@@ -58,29 +65,23 @@ fn filter_commits<'repo>(repo: &'repo Repository, email: &str)
 
         walk.push(oid)?;
     }
+    Ok(walk)
+}
 
-    Ok(walk
-       .filter(|oid| {
-            let oid = match oid {
-                Ok(id) => id,
-                Err(_) => return false, 
-            };
+fn filter_by_email<'repo>(repo: &'repo Repository, walk: Revwalk, emails: & Vec<String>) -> Result<Vec<Commit<'repo>>, Box<dyn Error>> {
+    let mut commits = Vec::new();
+    for oid in walk {
+        let commit = repo.find_commit(oid?)?;
+        let is_match = match commit.author().email() {
+            Some(e) => emails.contains(&String::from(e)),
+            None => continue,
+        };
 
-            if visited.contains(oid) {
-                return false;
-            }
-            visited.insert(*oid);
-            true
-       })
-       .map(|oid| return repo.find_commit(oid.unwrap()).expect("Couldn't find commit from oid"))
-       .filter(|commit| {
-           match commit.author().email() {
-               Some(e) => e == email,
-               None => false,
-           }
-       })
-       .collect()
-   )
+        if is_match {
+            commits.push(commit);
+        }
+    }
+    Ok(commits)
 }
 
 fn get_diff(repo: &Repository, old: Oid, new: Oid) -> Result<Diff, Box<dyn Error>> {

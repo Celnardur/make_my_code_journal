@@ -1,6 +1,5 @@
 use std::process;
-mod journal;
-use journal::config::Config;
+use git_journal::journal::config::Config;
 
 fn main() {
     let config = match Config::new() {
@@ -11,7 +10,7 @@ fn main() {
         },
     };
 
-    if let Err(e) = git_journal::run() {
+    if let Err(e) = git_journal::run(config) {
         println!("Application error: {}", e);
         process::exit(1);
     }
