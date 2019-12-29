@@ -1,6 +1,7 @@
 use std::process;
 use git_journal::journal::config::Config;
 
+
 fn main() {
     let config = match Config::new() {
         Ok(c) => c,

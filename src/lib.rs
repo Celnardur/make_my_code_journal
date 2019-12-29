@@ -20,8 +20,9 @@ use std::{
 };
 
 pub mod journal;
-use journal::diffs::*;
-use journal::config::Config;
+use journal::JournalDiff;
+use journal::Config;
+use journal::Entry;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     for repo in config.repos {
@@ -35,21 +36,6 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             }
         }
     }
-
-    /*
-    let old_oid = Oid::from_str("85f423d4a90650d2cd27b1c0d49fbd2ba92ab9a1")?;
-    let new_oid = Oid::from_str("9c6fae26ae28db468d5111a608d29a672317fcfc")?;
-
-    let diff = get_diff(&repo, old_oid, new_oid)?;
-    diff.print(DiffFormat::Patch, diff_print)?;
-
-    let counts = LineCounts::new();
-    println!();
-
-    let mut journal_diff = JournalDiff::new();
-    journal_diff.construct(diff)?;
-    println!("{}", serde_json::to_string(&journal_diff).unwrap());
-    */
 
     Ok(())
 }

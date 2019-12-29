@@ -1,5 +1,9 @@
 pub mod diffs;
+pub use diffs::JournalDiff;
 pub mod config;
+pub use config::Config;
+pub mod entry;
+pub use entry::Entry;
 
 use std::error;
 use std::fmt;
@@ -27,3 +31,4 @@ impl error::Error for Error {
         None
     }
 }
+
