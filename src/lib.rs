@@ -1,11 +1,5 @@
 use git2::{
     Repository,
-    Oid, 
-    Diff,
-    DiffDelta,
-    DiffHunk,
-    DiffLine,
-    DiffFormat,
     Commit,
     BranchType,
     Revwalk,
@@ -13,16 +7,12 @@ use git2::{
 
 use std::{
     error::Error,
-    str,
-    collections::HashSet,
-    //io::prelude::*,
-    //fs::File,
 };
 
 pub mod journal;
 use journal::JournalDiff;
 use journal::Config;
-use journal::Entry;
+//use journal::Entry;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     for repo in config.repos {
@@ -31,8 +21,8 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         let commits = filter_by_email(&repo, walk, &config.emails)?;
         println!("{:?}", commits.len());
         for commit in commits {
-            if let Ok(journal_diff) = JournalDiff::from_commit(&repo, &commit) {
-                println!("{:?}\n", journal_diff);
+            if let Ok(_journal_diff) = JournalDiff::from_commit(&repo, &commit) {
+                //println!("{:?}\n", journal_diff);
             }
         }
     }
@@ -68,30 +58,5 @@ fn filter_by_email<'repo>(repo: &'repo Repository, walk: Revwalk, emails: & Vec<
         }
     }
     Ok(commits)
-}
-
-fn get_diff(repo: &Repository, old: Oid, new: Oid) -> Result<Diff, Box<dyn Error>> {
-    let old_commit = repo.find_commit(old)?;
-    let new_commit = repo.find_commit(new)?;
-
-    let old_tree = repo.find_tree(old_commit.tree_id())?;
-    let new_tree = repo.find_tree(new_commit.tree_id())?;
-
-    Ok(repo.diff_tree_to_tree(Some(&old_tree), Some(&new_tree), None)?)
-}
-
-fn diff_print(delta: DiffDelta, _hunk: Option<DiffHunk>, line: DiffLine) -> bool {
-    let content = match str::from_utf8(line.content()) {
-        Err(_) => return false,
-        Ok(s) => s, 
-    };
-
-    match line.origin() {
-        '+' | '-' | ' ' => print!("{} {}", line.origin(), content),
-        'F' => print!("\n{}", content),
-        'H' => print!("  {}", content),
-        _ => print!("{} {}", line.origin(), content),
-    }
-    true
 }
 
