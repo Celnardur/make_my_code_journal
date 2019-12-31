@@ -60,3 +60,13 @@ fn filter_by_email<'repo>(repo: &'repo Repository, walk: Revwalk, emails: & Vec<
     Ok(commits)
 }
 
+/*
+ * Test Plan
+ *
+ * First time running test clone test repo into working dir.
+ * If no wifi fail with good error message 
+ *
+ * Have tests check for behavior that's specific to that repo
+ * because don't change repos in this library.
+ */
+
