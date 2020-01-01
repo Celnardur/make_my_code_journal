@@ -6,31 +6,20 @@ use git2::{
 };
 
 use std::{
-    error::Error,
+    error,
 };
 
-pub mod journal;
-use journal::JournalDiff;
-use journal::Config;
-//use journal::Entry;
+pub mod diffs;
+pub use diffs::JournalDiff;
+pub mod config;
+pub use config::Config;
+pub mod entry;
+pub use entry::Entry;
 
-pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    for repo in config.repos {
-        let repo = Repository::open(repo)?;
-        let walk = get_repo_revwalk(&repo)?;
-        let commits = filter_by_email(&repo, walk, &config.emails)?;
-        println!("{:?}", commits.len());
-        for commit in commits {
-            if let Ok(_journal_diff) = JournalDiff::from_commit(&repo, &commit) {
-                //println!("{:?}\n", journal_diff);
-            }
-        }
-    }
 
-    Ok(())
-}
+// General Functions
 
-fn get_repo_revwalk<'repo>(repo: &'repo Repository) -> Result<Revwalk<'repo>, Box<dyn Error>> {
+pub fn get_repo_revwalk<'repo>(repo: &'repo Repository) -> Result<Revwalk<'repo>, Box<dyn error::Error>> {
     let mut walk = repo.revwalk()?;
 
     for branch in repo.branches(Some(BranchType::Local))? {
@@ -44,7 +33,7 @@ fn get_repo_revwalk<'repo>(repo: &'repo Repository) -> Result<Revwalk<'repo>, Bo
     Ok(walk)
 }
 
-fn filter_by_email<'repo>(repo: &'repo Repository, walk: Revwalk, emails: & Vec<String>) -> Result<Vec<Commit<'repo>>, Box<dyn Error>> {
+pub fn filter_by_email<'repo>(repo: &'repo Repository, walk: Revwalk, emails: & Vec<String>) -> Result<Vec<Commit<'repo>>, Box<dyn error::Error>> {
     let mut commits = Vec::new();
     for oid in walk {
         let commit = repo.find_commit(oid?)?;
@@ -60,13 +49,32 @@ fn filter_by_email<'repo>(repo: &'repo Repository, walk: Revwalk, emails: & Vec<
     Ok(commits)
 }
 
-/*
- * Test Plan
- *
- * First time running test clone test repo into working dir.
- * If no wifi fail with good error message 
- *
- * Have tests check for behavior that's specific to that repo
- * because don't change repos in this library.
- */
+// Error Class 
+
+use std::fmt;
+use std::string::String;
+
+#[derive(Debug)]
+pub struct Error {
+    message: String,
+}
+
+impl Error {
+    pub fn new(message: &str) -> Error {
+        Error { message: String::from(message) }
+    }
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Journal Error: {}", self.message)
+    }
+}
+
+impl error::Error for Error {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        None
+    }
+}
+
 

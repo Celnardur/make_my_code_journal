@@ -1,5 +1,5 @@
 [package]
-name = "git_journal"
+name = "mmcj"
 version = "0.1.0"
 authors = ["Aaron Dorrance <celnardur@protonmail.com>"]
 edition = "2018"
