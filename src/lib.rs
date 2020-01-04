@@ -16,7 +16,6 @@ pub use config::Config;
 pub mod entry;
 pub use entry::Entry;
 
-
 // General Functions
 
 pub fn get_repo_revwalk<'repo>(repo: &'repo Repository) -> Result<Revwalk<'repo>, Box<dyn error::Error>> {
@@ -49,6 +48,38 @@ pub fn filter_by_email<'repo>(repo: &'repo Repository, walk: Revwalk, emails: & 
     Ok(commits)
 }
 
+// Tests for General Functions
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_repo_revwalk_test() -> Result<(), Box<dyn error::Error>> {
+        let repo = Repository::open("mmcj_test_repo")?;
+        let walk = get_repo_revwalk(&repo)?;
+        assert_eq!(12, walk.count(), "Returned revwalk has wrong number of commits");
+        Ok(())
+    }
+
+    #[test]
+    fn filter_by_email_test() -> Result<(), Box<dyn error::Error>> {
+        let repo = Repository::open("mmcj_test_repo")?;
+
+        let walk = get_repo_revwalk(&repo)?;
+        let both = vec![String::from("celnardur@protonmail.com"), String::from("celnardur@pm.com")];
+        let commits = filter_by_email(&repo, walk, &both)?;
+        assert_eq!(12, commits.len(), 
+                   "Filtering test repo by two emails should return all commits");
+
+        let walk = get_repo_revwalk(&repo)?;
+        let one = vec![String::from("celnardur@pm.com")];
+        let commits = filter_by_email(&repo, walk, &one)?;
+        assert_eq!(1, commits.len(), 
+                   "Filtering test repo by celnardur@pm.com should return one commit");
+        Ok(())
+    }
+}
+
 // Error Class 
 
 use std::fmt;
@@ -67,7 +98,7 @@ impl Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Journal Error: {}", self.message)
+        write!(f, "mmcj Error: {}", self.message)
     }
 }
 

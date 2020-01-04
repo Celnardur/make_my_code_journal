@@ -16,8 +16,7 @@ use git2::{
 struct DiffInfo {
     origin: char,
     content: String,
-    old_file: String,
-    new_file: String,
+    file: String,
 }
 
 fn get_diff_info(info: &mut Vec<DiffInfo>, diff: Diff) -> Result<(), Box<dyn Error>> {
@@ -32,20 +31,10 @@ fn get_diff_info(info: &mut Vec<DiffInfo>, diff: Diff) -> Result<(), Box<dyn Err
         let mut entry = DiffInfo {
             origin: line.origin(),
             content: content.to_string(),
-            new_file: String::new(),
-            old_file: String::new(),
+            file: String::new(),
         };
-
-        match line.origin() {
-            'F' => {
-                if let Some(f) = delta.new_file().path_bytes() {
-                    entry.new_file = str::from_utf8(f).unwrap().to_string();
-                }
-                if let Some(f) = delta.old_file().path_bytes() {
-                    entry.old_file = str::from_utf8(f).unwrap().to_string();
-                }
-            },
-            _ => (),
+        if let Some(f) = delta.new_file().path_bytes() {
+            entry.file = str::from_utf8(f).unwrap().to_string();
         }
 
         info_cell.borrow_mut().push(entry);
@@ -53,6 +42,11 @@ fn get_diff_info(info: &mut Vec<DiffInfo>, diff: Diff) -> Result<(), Box<dyn Err
     })?;
     Ok(())
 }
+
+// TODO: File rename appears as two seperate file changes, a deleted file and a made file
+// TODO: Initial Commit needs some stuff for it
+// TODO: Make way to make diff from Merge commit using seperate diffs for each merging branch
+// TODO: Make Modified Lines register as modified instead of 
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JournalDiff {
@@ -107,8 +101,7 @@ impl JournalDiff {
 pub struct FileChanges {
     counts: LineCounts,
     header: String,
-    old_path: String,
-    new_path: String,
+    path: String,
     hunks: Vec<Hunk>,
 }
 
@@ -117,8 +110,7 @@ impl FileChanges {
         FileChanges {
             counts: LineCounts::new(),
             header: String::new(),
-            old_path: String::new(),
-            new_path: String::new(),
+            path: String::new(),
             hunks: Vec::new(),
         }
     }
@@ -129,8 +121,7 @@ impl FileChanges {
         }
 
         self.header.push_str(&info[*index].content);
-        self.old_path.push_str(&info[*index].old_file);
-        self.new_path.push_str(&info[*index].new_file);
+        self.path.push_str(&info[*index].file);
         *index += 1;
         while info.get(*index).is_some() && info[*index].origin == 'H' {
             let hunk = Hunk::new(info, index);
@@ -195,6 +186,45 @@ impl LineCounts {
         self.added += rhs.added;
         self.deleted += rhs.deleted;
         self.modified += rhs.modified;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use git2::Oid;
+
+    fn get_diff_from_commit<'repo>(repo: &'repo Repository, oid: &str) -> Result<Diff<'repo>, Box<dyn Error>> {
+        let new_commit = repo.find_commit(Oid::from_str(oid)?)?;
+        let new_tree = repo.find_tree(new_commit.tree_id())?;
+
+        let old_commit = repo.find_commit(new_commit.parent_id(0)?)?;
+        let old_tree = repo.find_tree(old_commit.tree_id())?;
+        Ok(repo.diff_tree_to_tree(Some(&old_tree), Some(&new_tree), None)?)
+    }
+
+    #[test]
+    fn get_diff_info_test() -> Result<(), Box<dyn Error>> {
+        let repo = Repository::open("mmcj_test_repo")?;
+
+        let diff = get_diff_from_commit(&repo, "aeb35fe55b5deabc36399617c9a7c9281226b67e")?;
+        let mut info = Vec::new();
+        get_diff_info(&mut info, diff)?;
+
+        assert_eq!(5, info.len());
+        assert_eq!("@@ -1 +1,3 @@\n", info[1].content);
+        assert_eq!("This Line Will Be Modified\n", info[4].content);
+
+        assert_eq!('F', info[0].origin);
+        assert_eq!('H', info[1].origin);
+        assert_eq!(' ', info[2].origin);
+        assert_eq!('+', info[3].origin);
+
+        for di in info {
+            assert_eq!(di.file, "a.txt");
+        }
+
+        Ok(())
     }
 }
 
