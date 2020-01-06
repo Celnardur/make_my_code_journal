@@ -15,6 +15,7 @@ pub mod config;
 pub use config::Config;
 pub mod entry;
 pub use entry::Entry;
+pub mod folding_list;
 
 // General Functions
 

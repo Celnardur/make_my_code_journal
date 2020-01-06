@@ -11,4 +11,5 @@ git2 = "0.10.2"
 serde_json = "1.0"
 serde = {version = "1.0", features = ["derive"] }
 chrono = {version = "0.4", features = ["serde"] }
+termion = "1.5.4"
 
