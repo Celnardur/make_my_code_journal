@@ -1,10 +1,16 @@
 use super::Error;
+use std::{io::Stdout, error};
+use crate::ColorSettings;
 
 pub struct FoldingList {
     list: Vec<Box<dyn Expand>>,
     expanded: Vec<Segment>,
     cursor: usize,
     segment: usize, // segment that that cursor is currently in
+    // these are both options to make testing better (I know it's not ideal)
+    stream: Stdout,
+    colors: ColorSettings,
+    printing: bool,
 }
 
 /// This structure stores the start and ends of a currently expanded segment.
@@ -17,15 +23,23 @@ pub trait Expand {
     fn expand(&self) -> Vec<Box<dyn Expand>> {
         Vec::new()
     }
-    fn display(&self) {}
-    fn highlight(&self) {}
+    fn display(&self, _stream: &mut Stdout, _colors: &ColorSettings) -> Result<(),Box<dyn error::Error>>{Ok(())}
+    fn highlight(&self, _stream: &mut Stdout, _colors: &ColorSettings)-> Result<(),Box<dyn error::Error>>{Ok(())}
     fn id(&self) -> usize {
         0
     } // mostly for testing
 }
 
 impl FoldingList {
-    fn new(list: Vec<Box<dyn Expand>>) -> Result<FoldingList, Error> {
+    pub fn new(list: Vec<Box<dyn Expand>>, stream: Stdout, colors: ColorSettings) -> Result<FoldingList, Error> {
+        let mut fl = FoldingList::new_testing(list)?;
+        fl.stream = stream;
+        fl.colors = colors;
+        fl.printing = true;
+        Ok(fl)
+    }
+
+    fn new_testing(list: Vec<Box<dyn Expand>>) -> Result<FoldingList, Error> {
         if list.is_empty() {
             return Err(Error::new("Cannot initialize FoldingList with empty list"));
         }
@@ -38,10 +52,13 @@ impl FoldingList {
             }],
             cursor: 0,
             segment: 0,
+            stream: std::io::stdout(),
+            colors: ColorSettings::default(),
+            printing: false,
         })
     }
 
-    fn scroll(&mut self, amount: i64) {
+    pub fn scroll(&mut self, amount: i64) -> Result<(),Box<dyn error::Error>> {
         let pos = self.cursor as i64 + amount;
         if pos <= 0 {
             self.cursor = 0;
@@ -52,10 +69,11 @@ impl FoldingList {
         }
 
         self.update_current_segment();
-        self.render();
+        self.render()?;
+        Ok(())
     }
 
-    fn jump(&mut self, pos: usize) {
+    pub fn jump(&mut self, pos: usize) -> Result<(),Box<dyn error::Error>>{
         if pos >= self.list.len() {
             self.cursor = self.list.len() - 1;
         } else {
@@ -63,7 +81,8 @@ impl FoldingList {
         }
 
         self.update_current_segment();
-        self.render();
+        self.render()?;
+        Ok(())
     }
 
     fn update_current_segment(&mut self) {
@@ -92,10 +111,13 @@ impl FoldingList {
         }
     }
 
-    pub fn expand(&mut self) {
+    pub fn expand(&mut self) -> Result<(),Box<dyn error::Error>> {
         // expand the selected segment
         let mut to_insert = self.list[self.cursor].expand();
         let insert_len = to_insert.len();
+        if insert_len == 0 {
+            return Ok(());
+        }
 
         // add segment to list
         let insert_index = self.cursor + 1;
@@ -112,12 +134,13 @@ impl FoldingList {
             end: insert_index + insert_len,
         });
 
-        self.render();
+        self.render()?;
+        Ok(())
     }
 
-    pub fn collapse(&mut self) {
+    pub fn collapse(&mut self) -> Result<(),Box<dyn error::Error>>{
         if self.segment == 0 {
-            return; // cannot collapse root segment
+            return Ok(()); // cannot collapse root segment
         }
 
         // remove collapsed segment from expanded list
@@ -138,12 +161,16 @@ impl FoldingList {
         // find and update current segment
         self.update_current_segment();
 
-        self.render();
+        self.render()?;
+        Ok(())
     }
 
-    pub fn render(&self) {
+    pub fn render(&mut self) -> Result<(),Box<dyn error::Error>> {
+        // don't print if in testing
+        if !self.printing {
+            return Ok(());
+        }
         // TODO: make scroll customizable
-        // comment this line out if a tests fails and screen is cleared
         print!("{}{}", termion::clear::All, termion::cursor::Goto(1, 1));
         // TODO: make application width aware
         let height = termion::terminal_size().unwrap().1 as usize;
@@ -160,11 +187,12 @@ impl FoldingList {
 
         for index in start..end {
             if index == self.cursor {
-                self.list[index].highlight();
+                self.list[index].highlight(&mut self.stream, &self.colors)?;
             } else {
-                self.list[index].display();
+                self.list[index].display(&mut self.stream, &self.colors)?;
             }
         }
+        Ok(())
     }
 }
 
@@ -203,15 +231,15 @@ mod tests {
             Box::new(Fold::n(20)),
             Box::new(Fold::n(30)),
         ];
-        let fl = FoldingList::new(folds)?;
+        let fl = FoldingList::new_testing(folds).unwrap();
         assert_eq!(4, fl.list.len());
         assert_eq!(0, fl.cursor);
         assert_eq!(0, fl.segment);
         assert_eq!(0, fl.expanded[0].start);
         assert_eq!(4, fl.expanded[0].end);
 
-        if let Ok(_fl) = FoldingList::new(Vec::new()) {
-            panic!("FoldingList::new called on empty list should return an error");
+        if let Ok(_fl) = FoldingList::new_testing(Vec::new()) {
+            panic!("FoldingList::new_testing called on empty list should return an error");
         }
         Ok(())
     }
@@ -224,7 +252,7 @@ mod tests {
             Box::new(Fold::n(20)),
             Box::new(Fold::n(30)),
         ];
-        let mut fl = FoldingList::new(folds).unwrap();
+        let mut fl = FoldingList::new_testing(folds).unwrap();
         fl.scroll(-1);
         assert_eq!(0, fl.cursor);
 
@@ -245,7 +273,7 @@ mod tests {
             Box::new(Fold::n(20)),
             Box::new(Fold::n(30)),
         ];
-        let mut fl = FoldingList::new(folds).unwrap();
+        let mut fl = FoldingList::new_testing(folds).unwrap();
 
         fl.jump(10);
         assert_eq!(3, fl.cursor);
@@ -261,9 +289,9 @@ mod tests {
             Box::new(Fold::n(20)),
             Box::new(Fold::n(30)),
         ];
-        let mut fl = FoldingList::new(folds).unwrap();
+        let mut fl = FoldingList::new_testing(folds).unwrap();
         fl.cursor = 1;
-        fl.expand();
+        fl.expand().unwrap();
         assert_eq!(6, fl.list.len());
         assert_eq!(10, fl.list[1].id());
         assert_eq!(11, fl.list[2].id());
@@ -280,7 +308,7 @@ mod tests {
 
         fl.cursor = 2;
         fl.segment = 1;
-        fl.expand();
+        fl.expand().unwrap();
         assert_eq!(8, fl.list.len());
         assert_eq!(10, fl.list[1].id());
         assert_eq!(11, fl.list[2].id());
@@ -299,7 +327,7 @@ mod tests {
 
         fl.cursor = 0;
         fl.segment = 0;
-        fl.expand();
+        fl.expand().unwrap();
         assert_eq!(4, fl.expanded[1].start);
     }
 
@@ -311,17 +339,17 @@ mod tests {
             Box::new(Fold::n(20)),
             Box::new(Fold::n(30)),
         ];
-        let mut fl = FoldingList::new(folds).unwrap();
+        let mut fl = FoldingList::new_testing(folds).unwrap();
         fl.cursor = 1;
-        fl.expand();
+        fl.expand().unwrap();
 
         fl.cursor = 2;
         fl.segment = 1;
-        fl.expand();
+        fl.expand().unwrap();
 
         fl.cursor = 4;
         fl.segment = 2;
-        fl.collapse();
+        fl.collapse().unwrap();
         assert_eq!(6, fl.list.len());
         assert_eq!(10, fl.list[1].id());
         assert_eq!(11, fl.list[2].id());
@@ -339,11 +367,11 @@ mod tests {
 
         fl.cursor = 5;
         fl.segment = 0;
-        fl.expand();
+        fl.expand().unwrap();
 
         fl.cursor = 6;
         fl.segment = 2;
-        fl.collapse();
+        fl.collapse().unwrap();
         assert_eq!(5, fl.cursor);
         assert_eq!(0, fl.segment);
     }

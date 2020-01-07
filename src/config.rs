@@ -39,6 +39,23 @@ pub struct ColorSettings {
     pub hl_delete: String,
 }
 
+impl ColorSettings {
+    pub fn default() -> ColorSettings {
+        ColorSettings {
+            fg_default: String::new(),
+            bg_default: String::new(),
+            fg_highlight: String::new(),
+            bg_highlight: String::new(),
+            fg_add: String::new(),
+            bg_add: String::new(),
+            hl_add: String::new(),
+            fg_delete: String::new(),
+            bg_delete: String::new(),
+            hl_delete: String::new(),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Color {
     pub r: u8,
