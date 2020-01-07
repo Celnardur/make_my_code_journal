@@ -59,8 +59,8 @@ impl ColorSettings {
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Color {
     pub r: u8,
-    pub g: u8, 
-    pub b: u8, 
+    pub g: u8,
+    pub b: u8,
 }
 
 impl Config {
@@ -86,16 +86,16 @@ impl Config {
             repos: Vec::new(),
             emails: Vec::new(),
             colors: RGBColorSettings {
-                fg_default: Color {r: 5, g: 5, b: 5},
-                bg_default: Color {r: 0, g: 0, b: 0},
-                fg_highlight: Color {r: 0, g: 0, b: 0},
-                bg_highlight: Color {r: 5, g: 5, b: 1},
-                fg_add: Color {r: 0, g: 5, b: 0},
-                bg_add: Color {r: 0, g: 0, b: 0},
-                hl_add: Color {r: 5, g: 5, b: 5},
-                fg_delete: Color {r: 5, g: 0, b: 0},
-                bg_delete: Color {r: 0, g: 0, b: 0},
-                hl_delete: Color {r: 5, g: 5, b: 5},
+                fg_default: Color { r: 5, g: 5, b: 5 },
+                bg_default: Color { r: 0, g: 0, b: 0 },
+                fg_highlight: Color { r: 0, g: 0, b: 0 },
+                bg_highlight: Color { r: 5, g: 5, b: 1 },
+                fg_add: Color { r: 0, g: 5, b: 0 },
+                bg_add: Color { r: 0, g: 0, b: 0 },
+                hl_add: Color { r: 5, g: 5, b: 5 },
+                fg_delete: Color { r: 5, g: 0, b: 0 },
+                bg_delete: Color { r: 0, g: 0, b: 0 },
+                hl_delete: Color { r: 5, g: 5, b: 5 },
             },
         }
     }
@@ -147,7 +147,7 @@ impl Config {
             hl_delete: {
                 let c = self.colors.hl_delete;
                 AnsiValue::rgb(c.r, c.g, c.b).fg_string()
-            }
+            },
         })
     }
 }

@@ -1,8 +1,13 @@
 {
     "day_change_time": 500,
-    "emails": [],
+    "emails": [
+        "celnardur@protonmail.com",
+        "celnardur@pm.com"
+    ],
     "indent_string": "    ",
-    "repos": [],
+    "repos": [
+        "mmcj_test_repo"
+    ],
     "colors": {
         "bg_add": {
             "b": 0,
@@ -45,14 +50,14 @@
             "r": 0
         },
         "hl_add": {
-            "b": 5,
-            "g": 5,
-            "r": 5
+            "b": 0,
+            "g": 0,
+            "r": 0
         },
         "hl_delete": {
-            "b": 5,
-            "g": 5,
-            "r": 5
+            "b": 0,
+            "g": 0,
+            "r": 0
         }
     }
 }

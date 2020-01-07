@@ -6,16 +6,15 @@ pub mod diffs;
 pub use diffs::JournalDiff;
 
 pub mod config;
-pub use config::Config;
 pub use config::ColorSettings;
+pub use config::Config;
 
 pub mod entry;
 pub use entry::Entry;
 
 pub mod folding_list;
-pub use folding_list::FoldingList;
 pub use folding_list::Expand;
-
+pub use folding_list::FoldingList;
 
 // General Functions
 

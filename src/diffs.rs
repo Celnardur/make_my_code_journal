@@ -1,7 +1,7 @@
-use std::{cell::RefCell, error::Error, str, io::Stdout, io::Write};
-use serde::{Deserialize, Serialize};
-use git2::{Commit, Diff, Repository};
 use crate::{folding_list::Expand, ColorSettings};
+use git2::{Commit, Diff, Repository};
+use serde::{Deserialize, Serialize};
+use std::{cell::RefCell, error::Error, io::Stdout, io::Write, str};
 use termion::{clear, color};
 
 #[derive(Debug, Clone)]
@@ -99,14 +99,14 @@ impl Expand for JournalDiff {
         folds
     }
 
-    fn display(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>>{
-        writeln!(
-            stream, 
-            "{}{}{}{}Lines Added: {}   {}{}Lines Deleted: {}{}{}", 
-            colors.bg_default, 
+    fn display(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>> {
+        write!(
+            stream,
+            "{}{}{}{}Lines Added: {}   {}{}Lines Deleted: {}{}{}",
+            colors.bg_default,
             clear::CurrentLine,
             colors.fg_add,
-            colors.bg_add, 
+            colors.bg_add,
             self.counts.added,
             colors.fg_delete,
             colors.bg_delete,
@@ -117,11 +117,11 @@ impl Expand for JournalDiff {
         Ok(())
     }
 
-    fn highlight(&self, stream: &mut Stdout, colors: &ColorSettings)-> Result<(), Box<dyn Error>> {
-        writeln!(
-            stream, 
-            "{}{}{}Lines Added: {}   {}Lines Deleted: {}{}{}", 
-            colors.bg_highlight, 
+    fn highlight(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>> {
+        write!(
+            stream,
+            "{}{}{}Lines Added: {}   {}Lines Deleted: {}{}{}",
+            colors.bg_highlight,
             clear::CurrentLine,
             colors.hl_add,
             self.counts.added,
@@ -177,16 +177,16 @@ impl Expand for FileChanges {
         folds
     }
 
-    fn display(&self, stream: &mut Stdout, colors: &ColorSettings)-> Result<(), Box<dyn Error>> {
-        writeln!(
-            stream, 
-            "{}{}{}File: {}   {}{}Lines Added: {}   {}{}Lines Deleted: {}{}{}", 
-            colors.bg_default, 
+    fn display(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>> {
+        write!(
+            stream,
+            "{}{}{}File: {}   {}{}Lines Added: {}   {}{}Lines Deleted: {}{}{}",
+            colors.bg_default,
             clear::CurrentLine,
             colors.fg_default,
             self.path,
             colors.fg_add,
-            colors.bg_add, 
+            colors.bg_add,
             self.counts.added,
             colors.fg_delete,
             colors.bg_delete,
@@ -197,11 +197,11 @@ impl Expand for FileChanges {
         Ok(())
     }
 
-    fn highlight(&self, stream: &mut Stdout, colors: &ColorSettings)-> Result<(), Box<dyn Error>> {
-        writeln!(
-            stream, 
-            "{}{}{}File: {}   {}Lines Added: {}   {}Lines Deleted: {}{}{}", 
-            colors.bg_highlight, 
+    fn highlight(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>> {
+        write!(
+            stream,
+            "{}{}{}File: {}   {}Lines Added: {}   {}Lines Deleted: {}{}{}",
+            colors.bg_highlight,
             clear::CurrentLine,
             colors.fg_highlight,
             self.path,
@@ -237,13 +237,17 @@ impl Hunk {
             match origin {
                 '+' => {
                     hunk.counts.added += 1;
-                    hunk.lines.push(DiffLine::Added(info[*index].content.clone()));
-                },
+                    hunk.lines
+                        .push(DiffLine::Added(info[*index].content.clone()));
+                }
                 '-' => {
                     hunk.counts.deleted += 1;
-                    hunk.lines.push(DiffLine::Deleted(info[*index].content.clone()));
-                },
-                ' ' => hunk.lines.push(DiffLine::Context(info[*index].content.clone())),
+                    hunk.lines
+                        .push(DiffLine::Deleted(info[*index].content.clone()));
+                }
+                ' ' => hunk
+                    .lines
+                    .push(DiffLine::Context(info[*index].content.clone())),
                 _ => break,
             }
             *index += 1;
@@ -265,16 +269,16 @@ impl Expand for Hunk {
         folds
     }
 
-    fn display(&self, stream: &mut Stdout, colors: &ColorSettings)-> Result<(), Box<dyn Error>> {
-        writeln!(
-            stream, 
-            "{}{}{}{}   {}{}Lines Added: {}   {}{}Lines Deleted: {}{}{}", 
-            colors.bg_default, 
+    fn display(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>> {
+        write!(
+            stream,
+            "{}{}{}{}   {}{}Lines Added: {}   {}{}Lines Deleted: {}{}{}",
+            colors.bg_default,
             clear::CurrentLine,
             colors.fg_default,
             self.header,
             colors.fg_add,
-            colors.bg_add, 
+            colors.bg_add,
             self.counts.added,
             colors.fg_delete,
             colors.bg_delete,
@@ -285,11 +289,11 @@ impl Expand for Hunk {
         Ok(())
     }
 
-    fn highlight(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>>{
-        writeln!(
-            stream, 
-            "{}{}{}{}   {}Lines Added: {}   {}Lines Deleted: {}{}{}", 
-            colors.bg_highlight, 
+    fn highlight(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>> {
+        write!(
+            stream,
+            "{}{}{}{}   {}Lines Added: {}   {}Lines Deleted: {}{}{}",
+            colors.bg_highlight,
             clear::CurrentLine,
             colors.fg_highlight,
             self.header,
@@ -313,86 +317,86 @@ pub enum DiffLine {
 }
 
 impl Expand for DiffLine {
-    fn display(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>>{
+    fn display(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>> {
         match self {
             DiffLine::Context(s) => {
-                writeln!(
-                    stream, 
-                    "{}{}{}  {}{}{}", 
-                    colors.bg_default, 
+                write!(
+                    stream,
+                    "{}{}{}  {}{}{}",
+                    colors.bg_default,
                     clear::CurrentLine,
                     colors.fg_default,
                     s,
                     color::Fg(color::Reset),
                     color::Bg(color::Reset),
                 )?;
-            },
+            }
             DiffLine::Added(s) => {
-                writeln!(
-                    stream, 
-                    "{}{}{}+ {}{}{}", 
-                    colors.bg_add, 
+                write!(
+                    stream,
+                    "{}{}{}+ {}{}{}",
+                    colors.bg_add,
                     clear::CurrentLine,
                     colors.fg_add,
                     s,
                     color::Fg(color::Reset),
                     color::Bg(color::Reset),
                 )?;
-            },
+            }
             DiffLine::Deleted(s) => {
-                writeln!(
-                    stream, 
-                    "{}{}{}- {}{}{}", 
-                    colors.bg_delete, 
+                write!(
+                    stream,
+                    "{}{}{}- {}{}{}",
+                    colors.bg_delete,
                     clear::CurrentLine,
                     colors.fg_delete,
                     s,
                     color::Fg(color::Reset),
                     color::Bg(color::Reset),
                 )?;
-            },
+            }
         };
         Ok(())
     }
 
-    fn highlight(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>>{
+    fn highlight(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>> {
         match self {
             DiffLine::Context(s) => {
-                writeln!(
-                    stream, 
-                    "{}{}{}  {}{}{}", 
-                    colors.bg_highlight, 
+                write!(
+                    stream,
+                    "{}{}{}  {}{}{}",
+                    colors.bg_highlight,
                     clear::CurrentLine,
                     colors.fg_highlight,
                     s,
                     color::Fg(color::Reset),
                     color::Bg(color::Reset),
                 )?;
-            },
+            }
             DiffLine::Added(s) => {
-                writeln!(
-                    stream, 
-                    "{}{}{}+ {}{}{}", 
-                    colors.bg_highlight, 
+                write!(
+                    stream,
+                    "{}{}{}+ {}{}{}",
+                    colors.bg_highlight,
                     clear::CurrentLine,
                     colors.hl_add,
                     s,
                     color::Fg(color::Reset),
                     color::Bg(color::Reset),
                 )?;
-            },
+            }
             DiffLine::Deleted(s) => {
-                writeln!(
-                    stream, 
-                    "{}{}{}- {}{}{}", 
-                    colors.bg_highlight, 
+                write!(
+                    stream,
+                    "{}{}{}- {}{}{}",
+                    colors.bg_highlight,
                     clear::CurrentLine,
                     colors.hl_add,
                     s,
                     color::Fg(color::Reset),
                     color::Bg(color::Reset),
                 )?;
-            },
+            }
         };
         Ok(())
     }
