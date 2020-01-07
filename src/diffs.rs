@@ -1,16 +1,8 @@
-use std::{
-    error::Error, 
-    str,
-    cell::RefCell,
-};
+use std::{cell::RefCell, error::Error, str};
 
 use serde::{Deserialize, Serialize};
 
-use git2::{
-    Diff,
-    Repository,
-    Commit,
-};
+use git2::{Commit, Diff, Repository};
 
 #[derive(Debug, Clone)]
 struct DiffInfo {
@@ -25,7 +17,7 @@ fn get_diff_info(info: &mut Vec<DiffInfo>, diff: Diff) -> Result<(), Box<dyn Err
     diff.print(git2::DiffFormat::Patch, |delta, _hunk, line| {
         let content = match str::from_utf8(line.content()) {
             Err(_) => return false,
-            Ok(s) => s, 
+            Ok(s) => s,
         };
 
         let mut entry = DiffInfo {
@@ -46,14 +38,13 @@ fn get_diff_info(info: &mut Vec<DiffInfo>, diff: Diff) -> Result<(), Box<dyn Err
 // TODO: File rename appears as two seperate file changes, a deleted file and a made file
 // TODO: Initial Commit needs some stuff for it
 // TODO: Make way to make diff from Merge commit using seperate diffs for each merging branch
-// TODO: Make Modified Lines register as modified instead of 
+// TODO: Make Modified Lines register as modified instead of
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JournalDiff {
     counts: LineCounts,
     files: Vec<FileChanges>,
 }
-
 
 impl JournalDiff {
     pub fn new() -> JournalDiff {
@@ -66,7 +57,9 @@ impl JournalDiff {
     pub fn from_commit(repo: &Repository, commit: &Commit) -> Result<JournalDiff, Box<dyn Error>> {
         if commit.parent_count() > 1 {
             //TODO: Implement diff for a merge commit
-            return Err(Box::new(super::Error::new("Cannot git a diff for a merge commit yet")));
+            return Err(Box::new(super::Error::new(
+                "Cannot git a diff for a merge commit yet",
+            )));
         }
 
         let new_tree = repo.find_tree(commit.tree_id())?;
@@ -155,7 +148,8 @@ impl Hunk {
                 ' ' => (),
                 _ => break,
             }
-            hunk.content.push_str(&format!("{} {}", origin, info[*index].content));
+            hunk.content
+                .push_str(&format!("{} {}", origin, info[*index].content));
             *index += 1;
             origin = match info.get(*index) {
                 Some(i) => i.origin,
@@ -194,7 +188,10 @@ mod tests {
     use super::*;
     use git2::Oid;
 
-    fn get_diff_from_commit<'repo>(repo: &'repo Repository, oid: &str) -> Result<Diff<'repo>, Box<dyn Error>> {
+    fn get_diff_from_commit<'repo>(
+        repo: &'repo Repository,
+        oid: &str,
+    ) -> Result<Diff<'repo>, Box<dyn Error>> {
         let new_commit = repo.find_commit(Oid::from_str(oid)?)?;
         let new_tree = repo.find_tree(new_commit.tree_id())?;
 
@@ -227,4 +224,3 @@ mod tests {
         Ok(())
     }
 }
-

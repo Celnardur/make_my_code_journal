@@ -10,14 +10,18 @@ pub struct FoldingList {
 /// This structure stores the start and ends of a currently expanded segment.
 struct Segment {
     start: usize, // inclusive
-    end: usize, // exclusive
+    end: usize,   // exclusive
 }
 
 pub trait Expand {
-    fn expand(&self) -> Vec<Box<dyn Expand>> { Vec::new() }
+    fn expand(&self) -> Vec<Box<dyn Expand>> {
+        Vec::new()
+    }
     fn display(&self) {}
     fn highlight(&self) {}
-    fn id(&self) -> usize {0} // mostly for testing
+    fn id(&self) -> usize {
+        0
+    } // mostly for testing
 }
 
 impl FoldingList {
@@ -28,7 +32,10 @@ impl FoldingList {
         let list_len = list.len();
         Ok(FoldingList {
             list,
-            expanded: vec![Segment{ start: 0, end: list_len}],
+            expanded: vec![Segment {
+                start: 0,
+                end: list_len,
+            }],
             cursor: 0,
             segment: 0,
         })
@@ -62,7 +69,10 @@ impl FoldingList {
     fn update_current_segment(&mut self) {
         let mut diff = std::usize::MAX;
         for (index, segment) in self.expanded.iter().enumerate() {
-            if self.cursor  >= segment.start && self.cursor < segment.end && (self.cursor - segment.start) < diff {
+            if self.cursor >= segment.start
+                && self.cursor < segment.end
+                && (self.cursor - segment.start) < diff
+            {
                 diff = self.cursor - segment.start;
                 self.segment = index;
             }
@@ -97,8 +107,11 @@ impl FoldingList {
         self.update_segments(self.cursor, insert_len, 0);
 
         // add new segment
-        self.expanded.push(Segment { start: insert_index, end: insert_index + insert_len });
-        
+        self.expanded.push(Segment {
+            start: insert_index,
+            end: insert_index + insert_len,
+        });
+
         self.render();
     }
 
@@ -109,7 +122,7 @@ impl FoldingList {
 
         // remove collapsed segment from expanded list
         let collapsing = self.expanded.remove(self.segment);
-        
+
         // remove segment from list
         for _ in collapsing.start..collapsing.end {
             self.list.remove(collapsing.start);
@@ -134,8 +147,16 @@ impl FoldingList {
         print!("{}{}", termion::clear::All, termion::cursor::Goto(1, 1));
         // TODO: make application width aware
         let height = termion::terminal_size().unwrap().1 as usize;
-        let start = if (self.cursor as i64 - (height / 2) as i64) < 0 { 0 } else { self.cursor - (height / 2) };
-        let end = if (start + height) > self.list.len() { self.list.len() } else { start + height };
+        let start = if (self.cursor as i64 - (height / 2) as i64) < 0 {
+            0
+        } else {
+            self.cursor - (height / 2)
+        };
+        let end = if (start + height) > self.list.len() {
+            self.list.len()
+        } else {
+            start + height
+        };
 
         for index in start..end {
             if index == self.cursor {
@@ -149,8 +170,8 @@ impl FoldingList {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::Error;
+    use super::*;
 
     struct Fold {
         id: usize,
@@ -158,15 +179,16 @@ mod tests {
 
     impl Fold {
         fn n(id: usize) -> Fold {
-            Fold {
-                id,
-            }
+            Fold { id }
         }
     }
 
     impl Expand for Fold {
         fn expand(&self) -> Vec<Box<dyn Expand>> {
-            vec![Box::new(Fold{ id: self.id + 1}), Box::new(Fold{ id: self.id + 2})]
+            vec![
+                Box::new(Fold { id: self.id + 1 }),
+                Box::new(Fold { id: self.id + 2 }),
+            ]
         }
         fn id(&self) -> usize {
             self.id
@@ -176,10 +198,10 @@ mod tests {
     #[test]
     fn new_test() -> Result<(), Error> {
         let folds: Vec<Box<dyn Expand>> = vec![
-            Box::new(Fold::n(0)), 
-            Box::new(Fold::n(10)), 
-            Box::new(Fold::n(20)), 
-            Box::new(Fold::n(30)), 
+            Box::new(Fold::n(0)),
+            Box::new(Fold::n(10)),
+            Box::new(Fold::n(20)),
+            Box::new(Fold::n(30)),
         ];
         let fl = FoldingList::new(folds)?;
         assert_eq!(4, fl.list.len());
@@ -197,15 +219,15 @@ mod tests {
     #[test]
     fn scroll_test() {
         let folds: Vec<Box<dyn Expand>> = vec![
-            Box::new(Fold::n(0)), 
-            Box::new(Fold::n(10)), 
-            Box::new(Fold::n(20)), 
-            Box::new(Fold::n(30)), 
+            Box::new(Fold::n(0)),
+            Box::new(Fold::n(10)),
+            Box::new(Fold::n(20)),
+            Box::new(Fold::n(30)),
         ];
         let mut fl = FoldingList::new(folds).unwrap();
         fl.scroll(-1);
         assert_eq!(0, fl.cursor);
-        
+
         fl.scroll(5);
         assert_eq!(3, fl.cursor);
 
@@ -218,10 +240,10 @@ mod tests {
     #[test]
     fn jump() {
         let folds: Vec<Box<dyn Expand>> = vec![
-            Box::new(Fold::n(0)), 
-            Box::new(Fold::n(10)), 
-            Box::new(Fold::n(20)), 
-            Box::new(Fold::n(30)), 
+            Box::new(Fold::n(0)),
+            Box::new(Fold::n(10)),
+            Box::new(Fold::n(20)),
+            Box::new(Fold::n(30)),
         ];
         let mut fl = FoldingList::new(folds).unwrap();
 
@@ -234,10 +256,10 @@ mod tests {
     #[test]
     fn expand_test() {
         let folds: Vec<Box<dyn Expand>> = vec![
-            Box::new(Fold::n(0)), 
-            Box::new(Fold::n(10)), 
-            Box::new(Fold::n(20)), 
-            Box::new(Fold::n(30)), 
+            Box::new(Fold::n(0)),
+            Box::new(Fold::n(10)),
+            Box::new(Fold::n(20)),
+            Box::new(Fold::n(30)),
         ];
         let mut fl = FoldingList::new(folds).unwrap();
         fl.cursor = 1;
@@ -253,7 +275,7 @@ mod tests {
         assert_eq!(6, fl.expanded[0].end);
         assert_eq!(2, fl.expanded[1].start);
         assert_eq!(4, fl.expanded[1].end);
-        
+
         assert_eq!(0, fl.segment);
 
         fl.cursor = 2;
@@ -274,7 +296,7 @@ mod tests {
         assert_eq!(6, fl.expanded[1].end);
         assert_eq!(3, fl.expanded[2].start);
         assert_eq!(5, fl.expanded[2].end);
-        
+
         fl.cursor = 0;
         fl.segment = 0;
         fl.expand();
@@ -284,10 +306,10 @@ mod tests {
     #[test]
     fn collapse_test() {
         let folds: Vec<Box<dyn Expand>> = vec![
-            Box::new(Fold::n(0)), 
-            Box::new(Fold::n(10)), 
-            Box::new(Fold::n(20)), 
-            Box::new(Fold::n(30)), 
+            Box::new(Fold::n(0)),
+            Box::new(Fold::n(10)),
+            Box::new(Fold::n(20)),
+            Box::new(Fold::n(30)),
         ];
         let mut fl = FoldingList::new(folds).unwrap();
         fl.cursor = 1;
@@ -321,9 +343,8 @@ mod tests {
 
         fl.cursor = 6;
         fl.segment = 2;
-        fl.collapse(); 
+        fl.collapse();
         assert_eq!(5, fl.cursor);
         assert_eq!(0, fl.segment);
     }
 }
-

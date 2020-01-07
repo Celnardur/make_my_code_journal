@@ -1,9 +1,7 @@
-use std::process;
-use mmcj::*;
 use git2::Repository;
-use termion::{
-    color,
-};
+use mmcj::*;
+use std::process;
+use termion::color;
 
 fn main() {
     let config = match Config::new() {
@@ -11,7 +9,7 @@ fn main() {
         Err(e) => {
             println!("Config error: {}", e);
             process::exit(1);
-        },
+        }
     };
 
     if let Err(e) = run(config) {
@@ -20,7 +18,7 @@ fn main() {
     }
 }
 
-// Application Logic 
+// Application Logic
 
 pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let mut diffs = Vec::new();

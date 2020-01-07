@@ -7,4 +7,3 @@ pub struct Entry {
     title: Option<String>,
     text: String,
 }
-

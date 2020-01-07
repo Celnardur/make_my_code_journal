@@ -1,13 +1,6 @@
-use git2::{
-    Repository,
-    Commit,
-    BranchType,
-    Revwalk,
-};
+use git2::{BranchType, Commit, Repository, Revwalk};
 
-use std::{
-    error,
-};
+use std::error;
 
 pub mod diffs;
 pub use diffs::JournalDiff;
@@ -19,7 +12,9 @@ pub mod folding_list;
 
 // General Functions
 
-pub fn get_repo_revwalk<'repo>(repo: &'repo Repository) -> Result<Revwalk<'repo>, Box<dyn error::Error>> {
+pub fn get_repo_revwalk<'repo>(
+    repo: &'repo Repository,
+) -> Result<Revwalk<'repo>, Box<dyn error::Error>> {
     let mut walk = repo.revwalk()?;
 
     for branch in repo.branches(Some(BranchType::Local))? {
@@ -33,7 +28,11 @@ pub fn get_repo_revwalk<'repo>(repo: &'repo Repository) -> Result<Revwalk<'repo>
     Ok(walk)
 }
 
-pub fn filter_by_email<'repo>(repo: &'repo Repository, walk: Revwalk, emails: & Vec<String>) -> Result<Vec<Commit<'repo>>, Box<dyn error::Error>> {
+pub fn filter_by_email<'repo>(
+    repo: &'repo Repository,
+    walk: Revwalk,
+    emails: &Vec<String>,
+) -> Result<Vec<Commit<'repo>>, Box<dyn error::Error>> {
     let mut commits = Vec::new();
     for oid in walk {
         let commit = repo.find_commit(oid?)?;
@@ -58,7 +57,11 @@ mod tests {
     fn get_repo_revwalk_test() -> Result<(), Box<dyn error::Error>> {
         let repo = Repository::open("mmcj_test_repo")?;
         let walk = get_repo_revwalk(&repo)?;
-        assert_eq!(12, walk.count(), "Returned revwalk has wrong number of commits");
+        assert_eq!(
+            12,
+            walk.count(),
+            "Returned revwalk has wrong number of commits"
+        );
         Ok(())
     }
 
@@ -67,21 +70,30 @@ mod tests {
         let repo = Repository::open("mmcj_test_repo")?;
 
         let walk = get_repo_revwalk(&repo)?;
-        let both = vec![String::from("celnardur@protonmail.com"), String::from("celnardur@pm.com")];
+        let both = vec![
+            String::from("celnardur@protonmail.com"),
+            String::from("celnardur@pm.com"),
+        ];
         let commits = filter_by_email(&repo, walk, &both)?;
-        assert_eq!(12, commits.len(), 
-                   "Filtering test repo by two emails should return all commits");
+        assert_eq!(
+            12,
+            commits.len(),
+            "Filtering test repo by two emails should return all commits"
+        );
 
         let walk = get_repo_revwalk(&repo)?;
         let one = vec![String::from("celnardur@pm.com")];
         let commits = filter_by_email(&repo, walk, &one)?;
-        assert_eq!(1, commits.len(), 
-                   "Filtering test repo by celnardur@pm.com should return one commit");
+        assert_eq!(
+            1,
+            commits.len(),
+            "Filtering test repo by celnardur@pm.com should return one commit"
+        );
         Ok(())
     }
 }
 
-// Error Class 
+// Error Class
 
 use std::fmt;
 use std::string::String;
@@ -93,7 +105,9 @@ pub struct Error {
 
 impl Error {
     pub fn new(message: &str) -> Error {
-        Error { message: String::from(message) }
+        Error {
+            message: String::from(message),
+        }
     }
 }
 
@@ -108,5 +122,3 @@ impl error::Error for Error {
         None
     }
 }
-
-
