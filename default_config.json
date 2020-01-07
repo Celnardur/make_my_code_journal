@@ -1,0 +1,58 @@
+{
+    "day_change_time": 500,
+    "emails": [],
+    "indent_string": "    ",
+    "repos": [],
+    "colors": {
+        "bg_add": {
+            "b": 0,
+            "g": 0,
+            "r": 0
+        },
+        "bg_default": {
+            "b": 0,
+            "g": 0,
+            "r": 0
+        },
+        "bg_delete": {
+            "b": 0,
+            "g": 0,
+            "r": 0
+        },
+        "bg_highlight": {
+            "b": 1,
+            "g": 5,
+            "r": 5
+        },
+        "fg_add": {
+            "b": 0,
+            "g": 5,
+            "r": 0
+        },
+        "fg_default": {
+            "b": 5,
+            "g": 5,
+            "r": 5
+        },
+        "fg_delete": {
+            "b": 0,
+            "g": 0,
+            "r": 5
+        },
+        "fg_highlight": {
+            "b": 0,
+            "g": 0,
+            "r": 0
+        },
+        "hl_add": {
+            "b": 5,
+            "g": 5,
+            "r": 5
+        },
+        "hl_delete": {
+            "b": 5,
+            "g": 5,
+            "r": 5
+        }
+    }
+}
