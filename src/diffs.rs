@@ -28,6 +28,8 @@ fn get_diff_info(info: &mut Vec<DiffInfo>, diff: Diff) -> Result<(), Box<dyn Err
         if let Some(f) = delta.new_file().path_bytes() {
             entry.file = str::from_utf8(f).unwrap().to_string();
         }
+        // git rid of trailing newline
+        entry.content.pop();
 
         info_cell.borrow_mut().push(entry);
         true
@@ -40,7 +42,7 @@ fn get_diff_info(info: &mut Vec<DiffInfo>, diff: Diff) -> Result<(), Box<dyn Err
 // TODO: Make way to make diff from Merge commit using seperate diffs for each merging branch
 // TODO: Make Modified Lines register as modified instead of
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JournalDiff {
     counts: LineCounts,
     files: Vec<FileChanges>,
@@ -91,12 +93,12 @@ impl JournalDiff {
 }
 
 impl Expand for JournalDiff {
-    fn expand(&self) -> Vec<Box<dyn Expand>> {
+    fn expand(&self) -> (Vec<Box<dyn Expand>>, bool) {
         let mut folds: Vec<Box<dyn Expand>> = Vec::new();
         for file in &self.files {
-            folds.append(&mut file.expand());
+            folds.push(Box::new(file.clone()));
         }
-        folds
+        (folds, true)
     }
 
     fn display(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>> {
@@ -134,7 +136,7 @@ impl Expand for JournalDiff {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileChanges {
     counts: LineCounts,
     header: String,
@@ -169,12 +171,12 @@ impl FileChanges {
 }
 
 impl Expand for FileChanges {
-    fn expand(&self) -> Vec<Box<dyn Expand>> {
+    fn expand(&self) -> (Vec<Box<dyn Expand>>, bool) {
         let mut folds: Vec<Box<dyn Expand>> = Vec::new();
         for hunk in &self.hunks {
-            folds.append(&mut hunk.expand());
+            folds.push(Box::new(hunk.clone()));
         }
-        folds
+        (folds, true)
     }
 
     fn display(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>> {
@@ -216,7 +218,7 @@ impl Expand for FileChanges {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Hunk {
     counts: LineCounts,
     header: String,
@@ -261,12 +263,12 @@ impl Hunk {
 }
 
 impl Expand for Hunk {
-    fn expand(&self) -> Vec<Box<dyn Expand>> {
+    fn expand(&self) -> (Vec<Box<dyn Expand>>, bool) {
         let mut folds: Vec<Box<dyn Expand>> = Vec::new();
         for line in &self.lines {
             folds.push(Box::new(line.clone()));
         }
-        folds
+        (folds, false)
     }
 
     fn display(&self, stream: &mut Stdout, colors: &ColorSettings) -> Result<(), Box<dyn Error>> {
@@ -402,7 +404,7 @@ impl Expand for DiffLine {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LineCounts {
     added: usize,
     deleted: usize,
@@ -451,8 +453,8 @@ mod tests {
         get_diff_info(&mut info, diff)?;
 
         assert_eq!(5, info.len());
-        assert_eq!("@@ -1 +1,3 @@\n", info[1].content);
-        assert_eq!("This Line Will Be Modified\n", info[4].content);
+        assert_eq!("@@ -1 +1,3 @@", info[1].content);
+        assert_eq!("This Line Will Be Modified", info[4].content);
 
         assert_eq!('F', info[0].origin);
         assert_eq!('H', info[1].origin);
