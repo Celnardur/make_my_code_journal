@@ -1,6 +1,7 @@
 use super::Error;
 use crate::ColorSettings;
 use std::{error, io::Stdout, io::Write};
+use rand::Rng;
 
 pub struct FoldingList {
     list: Vec<Box<dyn Expand>>,
@@ -421,5 +422,29 @@ mod tests {
         fl.jump(2);
         fl.collapse();
         assert_eq!(1, fl.expanded.len());
+    }
+
+    #[test]
+    fn monkey_test() {
+        // nothing in here should cause panic
+        let mut rng = rand::thread_rng();
+        let mut fl = new_test_list();
+        for _ in 0..10000 {
+            let function = rng.gen_range(0, 4);
+            let limit = fl.expanded[0].end as i64;
+            match function {
+                0 => {
+                    let amount: i64 = rng.gen_range(-limit, limit);
+                    fl.scroll(amount);
+                },
+                1 => {
+                    let pos: usize = rng.gen_range(0, limit) as usize;
+                    fl.jump(pos);
+                },
+                2 => fl.expand(),
+                3 => fl.collapse(),
+                _ => ()
+            }
+        }
     }
 }
