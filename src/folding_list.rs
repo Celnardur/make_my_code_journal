@@ -139,7 +139,6 @@ impl FoldingList {
         });
 
         // recursively expand if specified
-        /*
         if recursive {
             let to_expand = &self.expanded[self.expanded.len() - 1];
             for pos in (to_expand.start..to_expand.end).rev() {
@@ -147,7 +146,6 @@ impl FoldingList {
                 self.expand();
             }
         }
-        */
     }
 
     pub fn collapse(&mut self) {
