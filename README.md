@@ -10,6 +10,18 @@ I spend alot of time coding and I want a way to summarize all that I have done i
 
 I think it will be cool to see all of this in one place. I'll be able to look back and read my journal and see what I was working on and doing each day.
 
+## Basics
+
+Currently, this takes a list of paths to local repositories and a list of emails from a config file located at  ~/.gitintegratedjournal/sTettings.json. It then uses git2 to filter the commits in those repositories by the emails in the config file. The commits are used to generate diffs, again using git2, and thoses diffs are what are displayed on the screen.
+
+Controlls: j - move up, k - move down, d - expand section, f - collapse section.
+
+Eventually, it will also show more commit information as well as sorting commits by into collapsible days, months and years which will also have summary information. Journal entries will be able to be added directly from the application. I will also add search and sorting capabilities.
+
+All data will be stored locally so you have complete control over your data.
+
+Long team, I might add more personal utilities like a calender, to do lists, notes, etc.
+
 ## Usage
 
 As I said eariler, this is not ready for public usage yet. However, if your curious and have rust installed, you should be able to get it up and running to see what I've done so far.
