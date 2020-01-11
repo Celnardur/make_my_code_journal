@@ -229,9 +229,22 @@ impl Hunk {
     fn new(info: &Vec<DiffInfo>, index: &mut usize) -> Hunk {
         let mut hunk = Hunk {
             counts: LineCounts::new(),
-            header: String::from(&info[*index].content),
+            header: String::new(),
             lines: Vec::new(),
         };
+        
+        // Remove line of context from header
+        let mut header_line = info[*index].content.chars();
+        let mut at_count = 0;
+        while let Some(ch) = header_line.next() {
+            hunk.header.push(ch);
+            if ch == '@' {
+                if at_count == 3 {
+                    break;
+                }
+                at_count += 1;
+            }
+        }
 
         *index += 1;
         let mut origin = info[*index].origin;
