@@ -1,7 +1,8 @@
 use super::Error;
 use crate::ColorSettings;
 use std::{error, io::Stdout, io::Write};
-use rand::Rng;
+
+const DEBUG: bool = false;
 
 pub struct FoldingList {
     list: Vec<Box<dyn Expand>>,
@@ -189,39 +190,41 @@ impl FoldingList {
             termion::cursor::Goto(1, 1)
         )?;
         // TODO: make application width aware
-        let height = termion::terminal_size().unwrap().1 as usize;
-        let start = if (self.cursor as i64 - (height / 2) as i64) < 0 {
+        let (widht, height) = termion::terminal_size().unwrap();
+        let midpoint = height as usize / 2;
+        let mut index = if self.list.len() < height as usize {
             0
+        } else if self.cursor <= midpoint {
+            0
+        } else if (self.list.len() - self.cursor) < midpoint {
+            self.list.len() - height as usize
         } else {
-            self.cursor - (height / 2)
-        };
-        let end = if (start + height) > self.list.len() {
-            self.list.len()
-        } else {
-            start + height
+            self.cursor - midpoint
         };
 
-        let mut line = 1;
-        for index in start..end {
-            line += 1;
+        for line in 2..(height + 2) {
             if index == self.cursor {
                 self.list[index].highlight(stream, &colors)?;
             } else {
                 self.list[index].display(stream, &colors)?;
             }
+            index += 1;
+            if index >= self.list.len() { break; }
             write!(stream, "{}", termion::cursor::Goto(1, line))?;
         }
-        write!(
-            stream,
-            "Lines: {}\tExpanded: {}\tCursor: {}\tSegment: {}",
-            self.list.len(),
-            self.expanded.len(),
-            self.cursor,
-            self.segment,
-        )?;
-        write!(stream, "{}", termion::cursor::Goto(1, line + 1))?;
-        write!(stream, "{:?}", self.expanded)?;
-        write!(stream, "{}", termion::cursor::Goto(1, line + 2))?;
+        if DEBUG {
+            write!(
+                stream,
+                "Lines: {}\tExpanded: {}\tCursor: {}\tSegment: {}",
+                self.list.len(),
+                self.expanded.len(),
+                self.cursor,
+                self.segment,
+            )?;
+            write!(stream, "{}", termion::cursor::Goto(1, height - 3))?;
+            write!(stream, "{:?}", self.expanded)?;
+            write!(stream, "{}", termion::cursor::Goto(1, height - 2))?;
+        }
         Ok(())
     }
 }
@@ -230,6 +233,7 @@ impl FoldingList {
 mod tests {
     use super::super::Error;
     use super::*;
+    use rand::Rng;
 
     struct Fold {
         id: usize,
