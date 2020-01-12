@@ -43,6 +43,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let mut stdout = io::stdout().into_raw_mode()?;
     let cs = config.get_color_settings()?;
     fl.render(&mut stdout, &cs)?;
+    stdout.flush()?;
 
     for c in stdin.keys() {
         match c? {

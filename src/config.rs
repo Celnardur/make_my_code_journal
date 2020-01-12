@@ -18,12 +18,9 @@ pub struct RGBColorSettings {
     pub bg_default: Color,
     pub fg_highlight: Color,
     pub bg_highlight: Color,
-    pub fg_add: Color,
-    pub bg_add: Color,
-    pub hl_add: Color,
-    pub fg_delete: Color,
-    pub bg_delete: Color,
-    pub hl_delete: Color,
+    pub add: Color,
+    pub delete: Color,
+    pub modified: Color,
 }
 
 pub struct ColorSettings {
@@ -31,12 +28,9 @@ pub struct ColorSettings {
     pub bg_default: String,
     pub fg_highlight: String,
     pub bg_highlight: String,
-    pub fg_add: String,
-    pub bg_add: String,
-    pub hl_add: String,
-    pub fg_delete: String,
-    pub bg_delete: String,
-    pub hl_delete: String,
+    pub add: String,
+    pub delete: String,
+    pub modified: String,
 }
 
 impl ColorSettings {
@@ -46,12 +40,9 @@ impl ColorSettings {
             bg_default: String::new(),
             fg_highlight: String::new(),
             bg_highlight: String::new(),
-            fg_add: String::new(),
-            bg_add: String::new(),
-            hl_add: String::new(),
-            fg_delete: String::new(),
-            bg_delete: String::new(),
-            hl_delete: String::new(),
+            add: String::new(),
+            delete: String::new(),
+            modified: String::new(),
         }
     }
 }
@@ -90,12 +81,9 @@ impl Config {
                 bg_default: Color { r: 0, g: 0, b: 0 },
                 fg_highlight: Color { r: 0, g: 0, b: 0 },
                 bg_highlight: Color { r: 5, g: 5, b: 1 },
-                fg_add: Color { r: 0, g: 5, b: 0 },
-                bg_add: Color { r: 0, g: 0, b: 0 },
-                hl_add: Color { r: 5, g: 5, b: 5 },
-                fg_delete: Color { r: 5, g: 0, b: 0 },
-                bg_delete: Color { r: 0, g: 0, b: 0 },
-                hl_delete: Color { r: 5, g: 5, b: 5 },
+                add: Color { r: 0, g: 5, b: 0 },
+                delete: Color { r: 5, g: 0, b: 0 },
+                modified: Color { r: 0, g: 0, b: 5 },
             },
         }
     }
@@ -124,28 +112,16 @@ impl Config {
                 let c = self.colors.bg_highlight;
                 AnsiValue::rgb(c.r, c.g, c.b).bg_string()
             },
-            fg_add: {
-                let c = self.colors.fg_add;
+            add: {
+                let c = self.colors.add;
                 AnsiValue::rgb(c.r, c.g, c.b).fg_string()
             },
-            bg_add: {
-                let c = self.colors.bg_add;
-                AnsiValue::rgb(c.r, c.g, c.b).bg_string()
-            },
-            hl_add: {
-                let c = self.colors.hl_add;
+            delete: {
+                let c = self.colors.delete;
                 AnsiValue::rgb(c.r, c.g, c.b).fg_string()
             },
-            fg_delete: {
-                let c = self.colors.fg_delete;
-                AnsiValue::rgb(c.r, c.g, c.b).fg_string()
-            },
-            bg_delete: {
-                let c = self.colors.bg_delete;
-                AnsiValue::rgb(c.r, c.g, c.b).bg_string()
-            },
-            hl_delete: {
-                let c = self.colors.hl_delete;
+            modified: {
+                let c = self.colors.modified;
                 AnsiValue::rgb(c.r, c.g, c.b).fg_string()
             },
         })

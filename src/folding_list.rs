@@ -26,6 +26,8 @@ pub trait Expand {
         &self,
         _stream: &mut Stdout,
         _colors: &ColorSettings,
+        _line: u16,
+        _width: u16,
     ) -> Result<(), Box<dyn error::Error>> {
         Ok(())
     }
@@ -33,6 +35,8 @@ pub trait Expand {
         &self,
         _stream: &mut Stdout,
         _colors: &ColorSettings,
+        _line: u16,
+        _width: u16,
     ) -> Result<(), Box<dyn error::Error>> {
         Ok(())
     }
@@ -190,7 +194,7 @@ impl FoldingList {
             termion::cursor::Goto(1, 1)
         )?;
         // TODO: make application width aware
-        let (widht, height) = termion::terminal_size().unwrap();
+        let (width, height) = termion::terminal_size().unwrap();
         let midpoint = height as usize / 2;
         let mut index = if self.list.len() < height as usize {
             0
@@ -202,15 +206,15 @@ impl FoldingList {
             self.cursor - midpoint
         };
 
-        for line in 2..(height + 2) {
+        for line in 1..(height + 1) {
             if index == self.cursor {
-                self.list[index].highlight(stream, &colors)?;
+                self.list[index].highlight(stream, &colors, line, width)?;
             } else {
-                self.list[index].display(stream, &colors)?;
+                self.list[index].display(stream, &colors, line, width)?;
             }
             index += 1;
             if index >= self.list.len() { break; }
-            write!(stream, "{}", termion::cursor::Goto(1, line))?;
+            write!(stream, "{}", termion::cursor::Goto(1, line + 1))?;
         }
         if DEBUG {
             write!(

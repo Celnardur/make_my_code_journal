@@ -9,17 +9,12 @@
         "mmcj_test_repo"
     ],
     "colors": {
-        "bg_add": {
+        "add": {
             "b": 0,
-            "g": 0,
+            "g": 5,
             "r": 0
         },
         "bg_default": {
-            "b": 0,
-            "g": 0,
-            "r": 0
-        },
-        "bg_delete": {
             "b": 0,
             "g": 0,
             "r": 0
@@ -29,19 +24,14 @@
             "g": 5,
             "r": 5
         },
-        "fg_add": {
+        "delete": {
             "b": 0,
-            "g": 5,
-            "r": 0
+            "g": 0,
+            "r": 5
         },
         "fg_default": {
             "b": 5,
             "g": 5,
-            "r": 5
-        },
-        "fg_delete": {
-            "b": 0,
-            "g": 0,
             "r": 5
         },
         "fg_highlight": {
@@ -49,13 +39,8 @@
             "g": 0,
             "r": 0
         },
-        "hl_add": {
-            "b": 0,
-            "g": 0,
-            "r": 0
-        },
-        "hl_delete": {
-            "b": 0,
+        "modified": {
+            "b": 5,
             "g": 0,
             "r": 0
         }
