@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::{error::Error, path::Path};
-use termion::color::AnsiValue;
+use std::{error::Error, path::Path, collections::HashMap};
+use termion::color;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
@@ -9,49 +9,8 @@ pub struct Config {
     pub day_change_time: i32,
     pub repos: Vec<String>,
     pub emails: Vec<String>,
-    pub colors: RGBColorSettings,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct RGBColorSettings {
-    pub fg_default: Color,
-    pub bg_default: Color,
-    pub fg_highlight: Color,
-    pub bg_highlight: Color,
-    pub add: Color,
-    pub delete: Color,
-    pub modified: Color,
-}
-
-pub struct ColorSettings {
-    pub fg_default: String,
-    pub bg_default: String,
-    pub fg_highlight: String,
-    pub bg_highlight: String,
-    pub add: String,
-    pub delete: String,
-    pub modified: String,
-}
-
-impl ColorSettings {
-    pub fn default() -> ColorSettings {
-        ColorSettings {
-            fg_default: String::new(),
-            bg_default: String::new(),
-            fg_highlight: String::new(),
-            bg_highlight: String::new(),
-            add: String::new(),
-            delete: String::new(),
-            modified: String::new(),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub struct Color {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
+    pub foreground_colors: HashMap<String, String>,
+    pub background_colors: HashMap<String, String>,
 }
 
 impl Config {
@@ -71,20 +30,26 @@ impl Config {
     }
 
     pub fn default() -> Config {
+        let foreground_colors = [
+            ("default", "default"),
+            ("add", "green"),
+            ("delete", "red"),
+            ("modify", "blue"),
+            ("highlight", "black"),
+        ].iter().cloned().map(|t| (t.0.to_string(), t.1.to_string())).collect();
+
+        let background_colors = [
+            ("default", "default"),
+            ("highlight", "yellow"),
+        ].iter().cloned().map(|t| (t.0.to_string(), t.1.to_string())).collect();
+
         Config {
             indent_string: String::from("    "),
             day_change_time: 500,
             repos: Vec::new(),
             emails: Vec::new(),
-            colors: RGBColorSettings {
-                fg_default: Color { r: 5, g: 5, b: 5 },
-                bg_default: Color { r: 0, g: 0, b: 0 },
-                fg_highlight: Color { r: 0, g: 0, b: 0 },
-                bg_highlight: Color { r: 5, g: 5, b: 1 },
-                add: Color { r: 0, g: 5, b: 0 },
-                delete: Color { r: 5, g: 0, b: 0 },
-                modified: Color { r: 0, g: 0, b: 5 },
-            },
+            foreground_colors,
+            background_colors,
         }
     }
 
@@ -94,37 +59,113 @@ impl Config {
         Ok(())
     }
 
-    pub fn get_color_settings(&self) -> Result<ColorSettings, Box<dyn Error>> {
-        Ok(ColorSettings {
-            fg_default: {
-                let c = self.colors.fg_default;
-                AnsiValue::rgb(c.r, c.g, c.b).fg_string()
-            },
-            bg_default: {
-                let c = self.colors.bg_default;
-                AnsiValue::rgb(c.r, c.g, c.b).bg_string()
-            },
-            fg_highlight: {
-                let c = self.colors.fg_highlight;
-                AnsiValue::rgb(c.r, c.g, c.b).fg_string()
-            },
-            bg_highlight: {
-                let c = self.colors.bg_highlight;
-                AnsiValue::rgb(c.r, c.g, c.b).bg_string()
-            },
-            add: {
-                let c = self.colors.add;
-                AnsiValue::rgb(c.r, c.g, c.b).fg_string()
-            },
-            delete: {
-                let c = self.colors.delete;
-                AnsiValue::rgb(c.r, c.g, c.b).fg_string()
-            },
-            modified: {
-                let c = self.colors.modified;
-                AnsiValue::rgb(c.r, c.g, c.b).fg_string()
-            },
-        })
+
+    pub fn get_color_settings(&self) -> Result<Colors, Box<dyn Error>> {
+        let mut colors = Colors {
+            fg: HashMap::new(),
+            bg: HashMap::new(),
+        };
+        for (setting, color_string) in &self.foreground_colors {
+            colors.fg.insert(setting.clone(), get_color_escape(color_string, true)?);
+        }
+        for (setting, color_string) in &self.background_colors {
+            colors.bg.insert(setting.clone(), get_color_escape(color_string, false)?);
+        }
+        Ok(colors)
+    }
+}
+
+pub struct Colors {
+    fg: HashMap<String, String>,
+    bg: HashMap<String, String>
+}
+
+impl Colors {
+    fn fg(&self, setting: &str) -> &str {
+        match self.fg.get(setting) {
+            Some(s) => s, 
+            None => color::Reset.fg_str(),
+        }
+    }
+
+    fn bg(&self, setting: &str) -> &str {
+        match self.fg.get(setting) {
+            Some(s) => s, 
+            None => color::Reset.bg_str(),
+        }
+    }
+}
+
+fn get_color_escape(str_color: &str, is_fg: bool) -> Result<String, Box<dyn Error>> {
+    let mut found = true;
+    let ansi;
+    if is_fg {
+        ansi = match str_color {
+            "default" => color::Reset.fg_str().to_string(),
+            "black" => color::Black.fg_str().to_string(),
+            "blue" => color::Blue.fg_str().to_string(),
+            "cyan" => color::Cyan.fg_str().to_string(),
+            "green" => color::Green.fg_str().to_string(),
+            "magenta" => color::Magenta.fg_str().to_string(),
+            "red" => color::Red.fg_str().to_string(),
+            "white" => color::White.fg_str().to_string(),
+            "yellow" => color::Yellow.fg_str().to_string(),
+            "light black" => color::LightBlack.fg_str().to_string(),
+            "light blue" => color::LightBlue.fg_str().to_string(),
+            "light cyan" => color::LightCyan.fg_str().to_string(),
+            "light green" => color::LightGreen.fg_str().to_string(),
+            "light magenta" => color::LightMagenta.fg_str().to_string(),
+            "light red" => color::LightRed.fg_str().to_string(),
+            "light white" => color::White.fg_str().to_string(),
+            "light yellow" => color::LightYellow.fg_str().to_string(),
+            _ => { 
+                found = false;
+                "".to_owned()
+            }
+        }
+    } else {
+        ansi = match str_color {
+            "default" => color::Reset.bg_str().to_string(),
+            "black" => color::Black.bg_str().to_string(),
+            "blue" => color::Blue.bg_str().to_string(),
+            "cyan" => color::Cyan.bg_str().to_string(),
+            "green" => color::Green.bg_str().to_string(),
+            "magenta" => color::Magenta.bg_str().to_string(),
+            "red" => color::Red.bg_str().to_string(),
+            "white" => color::White.bg_str().to_string(),
+            "yellow" => color::Yellow.bg_str().to_string(),
+            "light black" => color::LightBlack.bg_str().to_string(),
+            "light blue" => color::LightBlue.bg_str().to_string(),
+            "light cyan" => color::LightCyan.bg_str().to_string(),
+            "light green" => color::LightGreen.bg_str().to_string(),
+            "light magenta" => color::LightMagenta.bg_str().to_string(),
+            "light red" => color::LightRed.bg_str().to_string(),
+            "light white" => color::White.bg_str().to_string(),
+            "light yellow" => color::LightYellow.bg_str().to_string(),
+            _ => { 
+                found = false;
+                "".to_owned()
+            }
+        }
+    }
+    if found {
+        return Ok(ansi);
+    }
+    let str_nums: Vec<&str> = str_color.split_ascii_whitespace().collect();
+    let mut color_values: Vec<u8> = Vec::new();
+    for str_num in str_nums {
+        color_values.push(str_num.parse()?)
+    }
+
+    if color_values.len() == 3 {
+        let rgb_color =  color::Rgb(color_values[0], color_values[1], color_values[2]);
+        if is_fg {
+            Ok(rgb_color.fg_string())
+        } else {
+            Ok(rgb_color.bg_string())
+        }
+    } else {
+        Err(Box::new(crate::Error::new("Color Config must be r g b")))
     }
 }
 

@@ -6,7 +6,7 @@ pub mod diffs;
 pub use diffs::JournalDiff;
 
 pub mod config;
-pub use config::ColorSettings;
+pub use config::Colors;
 pub use config::Config;
 
 pub mod entry;

@@ -1,5 +1,5 @@
 use super::Error;
-use crate::ColorSettings;
+use crate::Colors;
 use std::{error, io::Stdout, io::Write};
 
 const DEBUG: bool = false;
@@ -25,7 +25,7 @@ pub trait Expand {
     fn display(
         &self,
         _stream: &mut Stdout,
-        _colors: &ColorSettings,
+        _colors: &Colors,
         _line: u16,
         _width: u16,
     ) -> Result<(), Box<dyn error::Error>> {
@@ -34,7 +34,7 @@ pub trait Expand {
     fn highlight(
         &self,
         _stream: &mut Stdout,
-        _colors: &ColorSettings,
+        _colors: &Colors,
         _line: u16,
         _width: u16,
     ) -> Result<(), Box<dyn error::Error>> {
@@ -184,7 +184,7 @@ impl FoldingList {
     pub fn render(
         &mut self,
         stream: &mut Stdout,
-        colors: &ColorSettings,
+        colors: &Colors,
     ) -> Result<(), Box<dyn error::Error>> {
         // TODO: make scroll customizable
         write!(

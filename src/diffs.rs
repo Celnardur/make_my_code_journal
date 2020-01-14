@@ -1,4 +1,4 @@
-use crate::{folding_list::Expand, ColorSettings};
+use crate::{folding_list::Expand, Colors};
 use git2::{Commit, Diff, Repository};
 use serde::{Deserialize, Serialize};
 use std::{cell::RefCell, error::Error, io::Stdout, io::Write, str};
@@ -100,31 +100,6 @@ impl Expand for JournalDiff {
         }
         (folds, true)
     }
-
-    fn display(&self, stream: &mut Stdout, colors: &ColorSettings, line: u16, width: u16) -> Result<(), Box<dyn Error>> {
-        write!(
-            stream,
-            "{}{}",
-            colors.bg_default,
-            clear::CurrentLine,
-        )?;
-        self.counts.display(stream, colors, line, width)?;
-        write!(stream, "{}{}", color::Bg(color::Reset), color::Fg(color::Reset))?;
-        Ok(())
-    }
-
-    fn highlight(&self, stream: &mut Stdout, colors: &ColorSettings, line: u16, width: u16) -> Result<(), Box<dyn Error>> {
-        write!(
-            stream,
-            "{}{}{}",
-            colors.bg_highlight,
-            clear::CurrentLine,
-            colors.fg_highlight,
-        )?;
-        self.counts.highlight(stream, colors, line, width)?;
-        write!(stream, "{}{}", color::Bg(color::Reset), color::Fg(color::Reset))?;
-        Ok(())
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -168,34 +143,6 @@ impl Expand for FileChanges {
             folds.push(Box::new(hunk.clone()));
         }
         (folds, true)
-    }
-
-    fn display(&self, stream: &mut Stdout, colors: &ColorSettings, line: u16, width: u16) -> Result<(), Box<dyn Error>> {
-        write!(
-            stream,
-            "{}{}{}{}",
-            colors.bg_default,
-            clear::CurrentLine,
-            colors.fg_default,
-            self.path,
-        )?;
-        self.counts.display(stream, colors, line, width)?;
-        write!(stream, "{}{}", color::Bg(color::Reset), color::Fg(color::Reset))?;
-        Ok(())
-    }
-
-    fn highlight(&self, stream: &mut Stdout, colors: &ColorSettings, line: u16, width: u16) -> Result<(), Box<dyn Error>> {
-        write!(
-            stream,
-            "{}{}{}{}",
-            colors.bg_highlight,
-            clear::CurrentLine,
-            colors.fg_highlight,
-            self.path,
-        )?;
-        self.counts.highlight(stream, colors, line, width)?;
-        write!(stream, "{}{}", color::Bg(color::Reset), color::Fg(color::Reset))?;
-        Ok(())
     }
 }
 
@@ -264,34 +211,6 @@ impl Expand for Hunk {
         }
         (folds, false)
     }
-
-    fn display(&self, stream: &mut Stdout, colors: &ColorSettings, line: u16, width: u16) -> Result<(), Box<dyn Error>> {
-        write!(
-            stream,
-            "{}{}{}{}",
-            colors.bg_default,
-            clear::CurrentLine,
-            colors.fg_default,
-            self.header,
-        )?;
-        self.counts.display(stream, colors, line, width)?;
-        write!(stream, "{}{}", color::Bg(color::Reset), color::Fg(color::Reset))?;
-        Ok(())
-    }
-
-    fn highlight(&self, stream: &mut Stdout, colors: &ColorSettings, line: u16, width: u16) -> Result<(), Box<dyn Error>> {
-        write!(
-            stream,
-            "{}{}{}{}",
-            colors.bg_highlight,
-            clear::CurrentLine,
-            colors.fg_highlight,
-            self.header,
-        )?;
-        self.counts.highlight(stream, colors, line, width)?;
-        write!(stream, "{}{}", color::Bg(color::Reset), color::Fg(color::Reset))?;
-        Ok(())
-    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -302,91 +221,7 @@ pub enum DiffLine {
     //TODO: Add Moddified
 }
 
-impl Expand for DiffLine {
-    fn display(&self, stream: &mut Stdout, colors: &ColorSettings, _line: u16, _width: u16) -> Result<(), Box<dyn Error>> {
-        match self {
-            DiffLine::Context(s) => {
-                write!(
-                    stream,
-                    "{}{}{}  {}{}{}",
-                    colors.bg_default,
-                    clear::CurrentLine,
-                    colors.fg_default,
-                    s,
-                    color::Fg(color::Reset),
-                    color::Bg(color::Reset),
-                )?;
-            }
-            DiffLine::Added(s) => {
-                write!(
-                    stream,
-                    "{}{}{}+ {}{}{}",
-                    colors.bg_default,
-                    clear::CurrentLine,
-                    colors.add,
-                    s,
-                    color::Fg(color::Reset),
-                    color::Bg(color::Reset),
-                )?;
-            }
-            DiffLine::Deleted(s) => {
-                write!(
-                    stream,
-                    "{}{}{}- {}{}{}",
-                    colors.bg_default,
-                    clear::CurrentLine,
-                    colors.delete,
-                    s,
-                    color::Fg(color::Reset),
-                    color::Bg(color::Reset),
-                )?;
-            }
-        };
-        Ok(())
-    }
-
-    fn highlight(&self, stream: &mut Stdout, colors: &ColorSettings, _line: u16, _width: u16) -> Result<(), Box<dyn Error>> {
-        match self {
-            DiffLine::Context(s) => {
-                write!(
-                    stream,
-                    "{}{}{}  {}{}{}",
-                    colors.bg_highlight,
-                    clear::CurrentLine,
-                    colors.fg_highlight,
-                    s,
-                    color::Fg(color::Reset),
-                    color::Bg(color::Reset),
-                )?;
-            }
-            DiffLine::Added(s) => {
-                write!(
-                    stream,
-                    "{}{}{}+ {}{}{}",
-                    colors.bg_highlight,
-                    clear::CurrentLine,
-                    colors.add,
-                    s,
-                    color::Fg(color::Reset),
-                    color::Bg(color::Reset),
-                )?;
-            }
-            DiffLine::Deleted(s) => {
-                write!(
-                    stream,
-                    "{}{}{}- {}{}{}",
-                    colors.bg_highlight,
-                    clear::CurrentLine,
-                    colors.delete,
-                    s,
-                    color::Fg(color::Reset),
-                    color::Bg(color::Reset),
-                )?;
-            }
-        };
-        Ok(())
-    }
-}
+impl Expand for DiffLine {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LineCounts {
@@ -415,29 +250,20 @@ impl LineCounts {
         string.len() as u16
     }
 
-    fn display(&self, stream: &mut Stdout, colors: &ColorSettings, line: u16, width: u16) -> Result<(), Box<dyn Error>> {
+    fn display(&self, stream: &mut Stdout, colors: &Colors, line: u16, width: u16) -> Result<(), Box<dyn Error>> {
         write!(
             stream, 
-            "{}{}{} {}{} {}{}",
+            "{}",
             termion::cursor::Goto(width + 1 - self.char_width(), line),
-            colors.add,
-            self.added,
-            colors.delete,
-            self.deleted,
-            colors.modified,
-            self.modified,
         )?;
         Ok(())
     }
 
-    fn highlight(&self, stream: &mut Stdout, _colors: &ColorSettings, line: u16, width: u16) -> Result<(), Box<dyn Error>> {
+    fn highlight(&self, stream: &mut Stdout, _colors: &Colors, line: u16, width: u16) -> Result<(), Box<dyn Error>> {
         write!(
             stream, 
-            "{}{} {} {}",
+            "{}",
             termion::cursor::Goto(width + 1 - self.char_width(), line),
-            self.added,
-            self.deleted,
-            self.modified,
         )?;
         Ok(())
     }
