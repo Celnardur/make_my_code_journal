@@ -59,7 +59,6 @@ impl Config {
         Ok(())
     }
 
-
     pub fn get_color_settings(&self) -> Result<Colors, Box<dyn Error>> {
         let mut colors = Colors {
             fg: HashMap::new(),
@@ -81,15 +80,15 @@ pub struct Colors {
 }
 
 impl Colors {
-    fn fg(&self, setting: &str) -> &str {
+    pub fn fg(&self, setting: &str) -> &str {
         match self.fg.get(setting) {
             Some(s) => s, 
             None => color::Reset.fg_str(),
         }
     }
 
-    fn bg(&self, setting: &str) -> &str {
-        match self.fg.get(setting) {
+    pub fn bg(&self, setting: &str) -> &str {
+        match self.bg.get(setting) {
             Some(s) => s, 
             None => color::Reset.bg_str(),
         }

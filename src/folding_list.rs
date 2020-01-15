@@ -1,6 +1,6 @@
 use super::Error;
-use crate::Colors;
-use std::{error, io::Stdout, io::Write};
+use crate::{Colors, LineCounts};
+use std::{error, fmt::Write};
 
 const DEBUG: bool = false;
 
@@ -24,7 +24,7 @@ pub trait Expand {
     }
     fn display(
         &self,
-        _stream: &mut Stdout,
+        _stream: &mut String,
         _colors: &Colors,
         _line: u16,
         _width: u16,
@@ -33,12 +33,15 @@ pub trait Expand {
     }
     fn highlight(
         &self,
-        _stream: &mut Stdout,
+        _stream: &mut String,
         _colors: &Colors,
         _line: u16,
         _width: u16,
     ) -> Result<(), Box<dyn error::Error>> {
         Ok(())
+    }
+    fn counts(&self) -> Option<LineCounts> {
+        None
     }
     fn id(&self) -> usize {
         0
@@ -183,16 +186,10 @@ impl FoldingList {
 
     pub fn render(
         &mut self,
-        stream: &mut Stdout,
         colors: &Colors,
-    ) -> Result<(), Box<dyn error::Error>> {
+    ) -> Result<String, Box<dyn error::Error>> {
+        let mut stream = String::new();
         // TODO: make scroll customizable
-        write!(
-            stream,
-            "{}{}",
-            termion::clear::All,
-            termion::cursor::Goto(1, 1)
-        )?;
         // TODO: make application width aware
         let (width, height) = termion::terminal_size().unwrap();
         let midpoint = height as usize / 2;
@@ -205,17 +202,52 @@ impl FoldingList {
         } else {
             self.cursor - midpoint
         };
+        write!(
+            stream, 
+            "{}{}{}", 
+            colors.bg("default"),
+            termion::clear::All, 
+            termion::cursor::Goto(1, 1),
+        );
 
         for line in 1..(height + 1) {
+            let lc = self.list[index].counts();
+            let adj_width = match &lc {
+                Some(c) => width - c.char_width(),
+                None => width,
+            };
+
             if index == self.cursor {
-                self.list[index].highlight(stream, &colors, line, width)?;
+                write!(
+                    stream, 
+                    "{}{}{}", 
+                    colors.bg("highlight"),
+                    termion::clear::CurrentLine,
+                    colors.fg("highlight"),
+                )?;
+                self.list[index].highlight(&mut stream, &colors, line, adj_width)?;
+                if let Some(c) = &lc {
+                    c.highlight(&mut stream, &colors, line, width)?;
+                }
             } else {
-                self.list[index].display(stream, &colors, line, width)?;
+                write!(
+                    &mut stream, 
+                    "{}{}{}", 
+                    colors.bg("default"), 
+                    termion::clear::CurrentLine,
+                    colors.fg("default"),
+                )?;
+                self.list[index].display(&mut stream, &colors, line, adj_width)?;
+                if let Some(c) = &lc {
+                    c.display(&mut stream, &colors, line, width)?;
+                }
             }
+
             index += 1;
             if index >= self.list.len() { break; }
             write!(stream, "{}", termion::cursor::Goto(1, line + 1))?;
         }
+        write!(stream, "{}{}", colors.bg("default"), colors.fg("default"))?;
         if DEBUG {
             write!(
                 stream,
@@ -229,7 +261,7 @@ impl FoldingList {
             write!(stream, "{:?}", self.expanded)?;
             write!(stream, "{}", termion::cursor::Goto(1, height - 2))?;
         }
-        Ok(())
+        Ok(stream)
     }
 }
 

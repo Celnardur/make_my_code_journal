@@ -4,6 +4,7 @@ use std::error;
 
 pub mod diffs;
 pub use diffs::JournalDiff;
+pub use diffs::LineCounts;
 
 pub mod config;
 pub use config::Colors;

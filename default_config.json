@@ -1,48 +1,22 @@
 {
+    "background_colors": {
+        "default": "default",
+        "highlight": "light yellow"
+    },
     "day_change_time": 500,
     "emails": [
         "celnardur@protonmail.com",
         "celnardur@pm.com"
     ],
+    "foreground_colors": {
+        "add": "green",
+        "default": "default",
+        "delete": "red",
+        "highlight": "black",
+        "modify": "light blue"
+    },
     "indent_string": "    ",
     "repos": [
         "mmcj_test_repo"
-    ],
-    "colors": {
-        "add": {
-            "b": 0,
-            "g": 5,
-            "r": 0
-        },
-        "bg_default": {
-            "b": 0,
-            "g": 0,
-            "r": 0
-        },
-        "bg_highlight": {
-            "b": 1,
-            "g": 5,
-            "r": 5
-        },
-        "delete": {
-            "b": 0,
-            "g": 0,
-            "r": 5
-        },
-        "fg_default": {
-            "b": 5,
-            "g": 5,
-            "r": 5
-        },
-        "fg_highlight": {
-            "b": 0,
-            "g": 0,
-            "r": 0
-        },
-        "modified": {
-            "b": 5,
-            "g": 0,
-            "r": 0
-        }
-    }
+    ]
 }

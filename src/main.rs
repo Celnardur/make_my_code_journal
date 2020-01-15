@@ -42,7 +42,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
     let stdin = io::stdin();
     let mut stdout = io::stdout().into_raw_mode()?;
     let cs = config.get_color_settings()?;
-    fl.render(&mut stdout, &cs)?;
+    write!(stdout,"{}", fl.render(&cs)?)?;
     stdout.flush()?;
 
     for c in stdin.keys() {
@@ -54,7 +54,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn std::error::Error>> {
             Key::Char('q') => break,
             _ => continue,
         }
-        fl.render(&mut stdout, &cs)?;
+        write!(stdout,"{}", fl.render(&cs)?)?;
         stdout.flush()?;
     }
     Ok(())

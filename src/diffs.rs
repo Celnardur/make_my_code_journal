@@ -1,7 +1,7 @@
 use crate::{folding_list::Expand, Colors};
 use git2::{Commit, Diff, Repository};
 use serde::{Deserialize, Serialize};
-use std::{cell::RefCell, error::Error, io::Stdout, io::Write, str};
+use std::{cell::RefCell, error::Error, fmt::Write, str};
 use termion::{clear, color};
 
 #[derive(Debug, Clone)]
@@ -100,6 +100,10 @@ impl Expand for JournalDiff {
         }
         (folds, true)
     }
+
+    fn counts(&self) -> Option<LineCounts> {
+        Some(self.counts.clone())
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -143,6 +147,10 @@ impl Expand for FileChanges {
             folds.push(Box::new(hunk.clone()));
         }
         (folds, true)
+    }
+
+    fn counts(&self) -> Option<LineCounts> {
+        Some(self.counts.clone())
     }
 }
 
@@ -211,6 +219,10 @@ impl Expand for Hunk {
         }
         (folds, false)
     }
+
+    fn counts(&self) -> Option<LineCounts> {
+        Some(self.counts.clone())
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -245,25 +257,34 @@ impl LineCounts {
         self.modified += rhs.modified;
     }
 
-    fn char_width(&self) -> u16 {
+    pub fn char_width(&self) -> u16 {
         let string = format!("{} {} {}", self.added, self.deleted, self.modified);
         string.len() as u16
     }
 
-    fn display(&self, stream: &mut Stdout, colors: &Colors, line: u16, width: u16) -> Result<(), Box<dyn Error>> {
+    pub fn display(&self, stream: &mut String, colors: &Colors, line: u16, width: u16) -> Result<(), Box<dyn Error>> {
         write!(
             stream, 
-            "{}",
+            "{}{}{} {}{} {}{}",
             termion::cursor::Goto(width + 1 - self.char_width(), line),
+            colors.fg("add"), 
+            self.added,
+            colors.fg("delete"),
+            self.deleted,
+            colors.fg("modify"),
+            self.modified,
         )?;
         Ok(())
     }
 
-    fn highlight(&self, stream: &mut Stdout, _colors: &Colors, line: u16, width: u16) -> Result<(), Box<dyn Error>> {
+    pub fn highlight(&self, stream: &mut String, _colors: &Colors, line: u16, width: u16) -> Result<(), Box<dyn Error>> {
         write!(
             stream, 
-            "{}",
+            "{}{} {} {}",
             termion::cursor::Goto(width + 1 - self.char_width(), line),
+            self.added,
+            self.deleted,
+            self.modified,
         )?;
         Ok(())
     }
